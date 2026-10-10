@@ -14,6 +14,10 @@ def get_user_service(db: Annotated[Session, Depends(get_db)]) -> UserService:
     return UserService(db=db, hasher=PasswordHasher())
 
 
+def get_auction_service(db: Annotated[Session, Depends(get_db)]) -> WalletService:
+    return WalletService(db=db)
+
+
 def get_auth_service(
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> AuthService:

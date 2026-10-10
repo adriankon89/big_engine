@@ -4,18 +4,23 @@ from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
+    Enum,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
+    SmallInteger,
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from app.enums import AuctionStatus, Role, UserStatus, WalletStatus
+from app.enums import AuctionStatus, Role, UserStatus, VerificationStatus, WalletStatus
 
 
 class Base(DeclarativeBase):
@@ -105,7 +110,15 @@ class Auction(Base):
     current_price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     bid_increment: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     status: Mapped[AuctionStatus] = mapped_column(
-        SQLEnum(AuctionStatus), default=AuctionStatus.DRAFT
+        SQLEnum(AuctionStatus),
+        default=AuctionStatus.DRAFT,
+        nullable=False,
+        # todo jaka różnia pomiędzy sqlnum a enum w sqlalchemy
+    )
+    verification_status: Mapped[VerificationStatus] = mapped_column(
+        Enum(VerificationStatus),
+        default=VerificationStatus.PENDING,
+        nullable=False,
     )
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
@@ -122,4 +135,46 @@ class Auction(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class AuctionImage(Base):
+    __tablename__ = "auction_images"
+
+    __table_args__ = (
+        Index(
+            "uq_auction_images_primary",
+            "auction_id",
+            unique=True,
+            postgresql_where=text("is_primary = true"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    auction_id: Mapped[int] = mapped_column(
+        ForeignKey("auctions.id", ondelete="CASCADE"),
+        index=True,
+    )
+    storage_key: Mapped[str] = mapped_column(
+        String(500),
+        unique=True,
+    )
+    file_size: Mapped[int] = mapped_column(Integer)
+    mime_type: Mapped[str] = mapped_column(String(100))
+    position: Mapped[int] = mapped_column(
+        SmallInteger,
+        default=0,
+        server_default=text("0"),
+    )
+    is_primary: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=text("false"),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+    auction: Mapped["Auction"] = relationship(
+        back_populates="images",
     )
