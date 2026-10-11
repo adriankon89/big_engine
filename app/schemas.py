@@ -119,6 +119,22 @@ class BidRead(BidCreate):
 
 
 # auction
+
+
+class AuctionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    title: str
+    description: str
+    starting_price: Decimal
+    minimum_price: Decimal
+    current_price: Decimal | None
+    bid_increment: Decimal | None
+    status: str
+    starts_at: datetime
+    ends_at: datetime
+
+
 class AuctionImageCreate(BaseModel):
     storage_path: str = Field(max_length=500)
     file_size: int | None = Field(default=None)
@@ -131,6 +147,7 @@ class AuctionCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=40, max_length=1000)
     starting_price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    minimum_price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
     currency: str = Field(min_length=3, max_length=3)
     starts_at: datetime
     ends_at: datetime

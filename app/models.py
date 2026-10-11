@@ -109,8 +109,8 @@ class Auction(Base):
     description: Mapped[str] = mapped_column(Text)
     starting_price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     minimum_price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
-    current_price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
-    bid_increment: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    current_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
+    bid_increment: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
     status: Mapped[AuctionStatus] = mapped_column(
         SQLEnum(AuctionStatus),
         default=AuctionStatus.DRAFT,
@@ -122,6 +122,7 @@ class Auction(Base):
         default=VerificationStatus.PENDING,
         nullable=False,
     )
+    currency: Mapped[str] = mapped_column(String(3), default="PLN")
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     winner_id: Mapped[int | None] = mapped_column(
