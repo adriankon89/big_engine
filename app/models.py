@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -32,7 +32,9 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
-    status: Mapped[UserStatus] = mapped_column(String(50), default=UserStatus.ACTIVE)
+    status: Mapped[UserStatus] = mapped_column(
+        String(50), default=UserStatus.ACTIVE, server_default=UserStatus.ACTIVE
+    )
     hashed_password: Mapped[str] = mapped_column(String(200))
     role: Mapped[Role] = mapped_column(String(50), default=Role.USER)
     token_version: Mapped[int] = mapped_column(
@@ -41,12 +43,12 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     wallet: Mapped[Optional["Wallet"]] = relationship(
@@ -73,10 +75,10 @@ class Wallet(Base):
     )
     version: Mapped[int] = mapped_column(default=1)  # Optimistic locking
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), onupdate=lambda: datetime.now(UTC)
     )
 
     @property
@@ -129,13 +131,15 @@ class Auction(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
     )
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        onupdate=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(UTC),
     )
+
+    images: Mapped[list["AuctionImage"]] = relationship(back_populates="auction")
 
 
 class AuctionImage(Base):

@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from auth.dependencies import get_current_user
 from fastapi import APIRouter, Depends, status
 
+from app.auth.dependencies import get_current_user
 from app.dependencies import get_auction_service
 from app.models import User
-from app.schemas import AuctionCreate, AuctionCreateResponse
+from app.schemas import AuctionCreate
 from app.services.auction_service import AuctionService
 
 router = APIRouter()
@@ -23,7 +23,7 @@ def get_auction(auction_id: int):
 
 @router.post(
     "/auctions",
-    response_model=AuctionCreateResponse,
+    # response_model=AuctionCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_auction(
