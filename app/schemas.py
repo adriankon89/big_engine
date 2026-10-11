@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from math import ceil
 from typing import Generic, TypeVar
@@ -142,11 +142,11 @@ class AuctionCreate(BaseModel):
         ends_at = self.ends_at
 
         if starts_at.tzinfo is None:
-            starts_at: datetime = starts_at.replace(tzinfo=timezone.utc)
+            starts_at: datetime = starts_at.replace(tzinfo=UTC)
         if ends_at.tzinfo is None:
-            ends_at: datetime = ends_at.replace(tzinfo=timezone.utc)
+            ends_at: datetime = ends_at.replace(tzinfo=UTC)
 
-        if starts_at < datetime.now(timezone.utc):
+        if starts_at < datetime.now(UTC):
             raise ValueError("starts_at must be greater than or equal to now")
         if ends_at < starts_at:
             raise ValueError("ends_at must be greater than or equal to starts_at")
