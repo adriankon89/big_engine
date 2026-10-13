@@ -28,6 +28,10 @@ class BadRequestException(Exception):
         super().__init__(self.message)
 
 
+class UploadValidationError(BadRequestException):
+    pass
+
+
 class UnauthorizedException(Exception):
     def __init__(self, message: str = "Wrong credentials"):
         self.message = message

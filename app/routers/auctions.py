@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from pydantic import ValidationError
 
 from app.auth.dependencies import get_current_user
+from app.core.upload_validation import IMAGE_UPLOAD_POLICY, validate_uploads
 from app.dependencies import get_auction_service
 from app.models import User
 from app.schemas import AuctionCreate, AuctionRead
@@ -42,6 +43,8 @@ def create_auction(
 ):
     if images is None:
         images = []
+
+    validate_uploads(images, policy=IMAGE_UPLOAD_POLICY)
 
     try:
         auction_dict = json.loads(auction_data)
