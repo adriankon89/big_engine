@@ -164,6 +164,7 @@ class AuctionImage(Base):
         String(500),
         unique=True,
     )
+    original_filename: Mapped[str] = mapped_column(String(500))
     file_size: Mapped[int] = mapped_column(Integer)
     mime_type: Mapped[str] = mapped_column(String(100))
     position: Mapped[int] = mapped_column(

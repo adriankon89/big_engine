@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,6 +22,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./bid_engine.db"
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+
+    # File storage
+    UPLOAD_DIR: Path = Path(__file__).resolve().parent.parent / "uploads"
 
     # Configure Pydantic to read from .env
     model_config = SettingsConfigDict(
