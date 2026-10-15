@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import (
     BadRequestException,
     InvalidCredentialsException,
+    NoPermissionException,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
@@ -91,10 +92,12 @@ class UserService:
             raise UserNotFoundError(identifier=user_id)
 
         if current_user.role != Role.ADMIN.value:
-            raise PermissionError("must be admin to update user")
+            raise NoPermissionException("must be admin to update user")
 
         if current_user.role == Role.GUEST.value and current_user.id != user_id:
-            raise PermissionError("must be admin or the user themselves to update user")
+            raise NoPermissionException(
+                "must be admin or the user themselves to update user"
+            )
 
         for field, value in payload.model_dump(
             exclude={"password"}, exclude_unset=True

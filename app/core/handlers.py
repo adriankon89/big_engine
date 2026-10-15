@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.exceptions import (
     BadRequestException,
+    NoPermissionException,
     UserAlreadyExistsError,
     UserNotFoundError,
 )
@@ -48,4 +49,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(BadRequestException, bad_request_handler)
     app.add_exception_handler(UserAlreadyExistsError, user_already_exists_handler)
     app.add_exception_handler(UserNotFoundError, user_not_found_handler)
-    app.add_exception_handler(PermissionError, permission_denied_handler)
+    app.add_exception_handler(NoPermissionException, permission_denied_handler)

@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 
 from app.auth.dependencies import get_current_user
+from app.core.exceptions import NoPermissionException
 
 
 class RoleChecker:
@@ -14,7 +15,5 @@ class RoleChecker:
     ) -> dict:
         user_role = current_user.get("role")
         if user_role not in self.allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-            )
+            raise NoPermissionException("Access denied")
         return current_user

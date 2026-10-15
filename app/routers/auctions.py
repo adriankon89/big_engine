@@ -10,6 +10,7 @@ from app.dependencies import get_auction_service
 from app.models import User
 from app.schemas import AuctionCreate, AuctionRead
 from app.services.auction_service import AuctionService
+from app.services.dto import UploadedFileDTO
 
 router = APIRouter()
 
@@ -59,5 +60,20 @@ def create_auction(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors()
         ) from e
 
-    auction_service.create(payload=payload, images=images, user=current_user)
-    return {"message": "Auction created", "images_len": len(images)}
+    file_dtos = [
+        UploadedFileDTO(
+            filename=image.filename or "upload",
+            content_type=image.content_type or "application/octet-stream",
+            content=image.file.read(),
+        )
+        for image in images
+    ]
+
+    auction = auction_service.create(
+        payload=payload, images=file_dtos, user=current_user
+    )
+    return {
+        "message": "Auction created",
+        "auction_id": auction.id,
+        "images_len": len(images),
+    }

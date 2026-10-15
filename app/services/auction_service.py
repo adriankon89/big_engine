@@ -1,46 +1,37 @@
 import builtins
-from pathlib import Path
 from uuid import uuid4
 
-from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.models import Auction, AuctionImage, User
 from app.schemas import AuctionCreate
+from app.services.dto import UploadedFileDTO
+from app.services.file_storage import FileStorage
 
 
-# todo UploadFile framework agnostic
 class AuctionService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, storage: FileStorage) -> None:
         self.db: Session = db
+        self.storage = storage
 
-    def list(self):
-        print(len(self.db.query(Auction).all()))
+    def list(self) -> list[Auction]:
         return list(self.db.query(Auction).all())
 
     def create(
-        self, payload: AuctionCreate, images: builtins.list[UploadFile], user: User
-    ):
-
+        self, payload: AuctionCreate, images: builtins.list[UploadedFileDTO], user: User
+    ) -> Auction:
         auction_data = payload.model_dump(exclude={"images"})
         auction = Auction(**auction_data)
         auction.seller_id = user.id
         self.db.add(auction)
-        saved_paths: list[Path] = []
+        saved_storage_keys: list[str] = []
 
         try:
             self.db.flush()
-            upload_dir = get_settings().UPLOAD_DIR
-            if images:
-                upload_dir.mkdir(parents=True, exist_ok=True)
-
             for position, image in enumerate(images):
-                contents = image.file.read()
                 storage_key = uuid4().hex
-                file_path = upload_dir / storage_key
-                file_path.write_bytes(contents)
-                saved_paths.append(file_path)
+                self.storage.save(storage_key, image.content)
+                saved_storage_keys.append(storage_key)
 
                 metadata = (
                     payload.images[position] if position < len(payload.images) else None
@@ -49,9 +40,9 @@ class AuctionService:
                     AuctionImage(
                         auction_id=auction.id,
                         storage_key=storage_key,
-                        original_filename=image.filename or "upload",
-                        file_size=len(contents),
-                        mime_type=image.content_type or "application/octet-stream",
+                        original_filename=image.filename,
+                        file_size=len(image.content),
+                        mime_type=image.content_type,
                         position=metadata.order if metadata else position,
                         is_primary=(
                             metadata.is_primary
@@ -65,8 +56,8 @@ class AuctionService:
             self.db.refresh(auction)
         except Exception:
             self.db.rollback()
-            for file_path in saved_paths:
-                file_path.unlink(missing_ok=True)
+            for storage_key in saved_storage_keys:
+                self.storage.delete(storage_key)
             raise
 
         return auction

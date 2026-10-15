@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import NoPermissionException
 from app.models import User, Wallet
 from app.schemas import WalletUpdate
 from app.value_objects.balance import Balance
@@ -44,7 +45,7 @@ class WalletService:
         # w update czy powinienem podawać kwotę o którą aktualizuję? chyba tak a nie o nową kwotę bo to jest update a nie replace
         wallet = user.wallet
         if wallet.user_id != user.id:
-            raise PermissionError("User does not own this wallet.")
+            raise NoPermissionException("User does not own this wallet.")
 
         balance = Balance.of(payload.balance)
         wallet.balance_available = balance.amount
