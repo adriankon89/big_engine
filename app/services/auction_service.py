@@ -3,9 +3,9 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
+from app.dto import UploadedFileDTO
 from app.models import Auction, AuctionImage, User
 from app.schemas import AuctionCreate
-from app.services.dto import UploadedFileDTO
 from app.services.file_storage import FileStorage
 from app.tasks.auction_validation import auction_validation
 
