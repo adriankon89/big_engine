@@ -7,6 +7,7 @@ from app.models import Auction, AuctionImage, User
 from app.schemas import AuctionCreate
 from app.services.dto import UploadedFileDTO
 from app.services.file_storage import FileStorage
+from app.tasks.auction_validation import auction_validation
 
 
 class AuctionService:
@@ -54,6 +55,8 @@ class AuctionService:
 
             self.db.commit()
             self.db.refresh(auction)
+            auction_validation.delay(auction.id)
+
         except Exception:
             self.db.rollback()
             for storage_key in saved_storage_keys:
