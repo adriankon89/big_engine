@@ -111,13 +111,14 @@ class Auction(Base):
     minimum_price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     current_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
     bid_increment: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
-    status: Mapped[AuctionStatus] = mapped_column(
+    _status: Mapped[AuctionStatus] = mapped_column(
         SQLEnum(AuctionStatus),
         default=AuctionStatus.DRAFT,
         nullable=False,
         # todo jaka różnia pomiędzy sqlnum a enum w sqlalchemy
     )
-    verification_status: Mapped[VerificationStatus] = mapped_column(
+    _verification_status: Mapped[VerificationStatus] = mapped_column(
+        "verification_status",
         Enum(VerificationStatus),
         default=VerificationStatus.PENDING,
         nullable=False,
@@ -142,8 +143,16 @@ class Auction(Base):
 
     images: Mapped[list["AuctionImage"]] = relationship(back_populates="auction")
 
+    @property
+    def status(self) -> AuctionStatus:
+        return self._status
+
+    @property
+    def verification_status(self) -> VerificationStatus:
+        return self._verification_status
+
     def reject(self) -> None:
-        self.verification_status = VerificationStatus.REJECTED
+        self._verification_status = VerificationStatus.REJECTED
 
 
 class AuctionImage(Base):
