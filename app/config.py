@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
+    DEFAULT_RATE_LIMIT: str = "200/minute"
+
     # File storage
     UPLOAD_DIR: Path = Path(__file__).resolve().parent.parent / "uploads"
 
