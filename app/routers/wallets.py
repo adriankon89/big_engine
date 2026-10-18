@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import get_current_user
 from app.dependencies import get_wallet_service
-from app.models import User, Wallet
+from app.models.user import User
+from app.models.wallet import Wallet
 from app.schemas import WalletResponse, WalletUpdate
 from app.services.wallet_service import WalletAlreadyExistsError, WalletService
 

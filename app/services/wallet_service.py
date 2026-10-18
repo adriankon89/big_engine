@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NoPermissionException
-from app.models import User, Wallet
+from app.models.user import User
+from app.models.wallet import Wallet
 from app.schemas import WalletUpdate
 from app.value_objects.balance import Balance
 from app.value_objects.money import Money

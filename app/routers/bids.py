@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
-from app.models import Bid, User
+from app.models.bid import Bid
+from app.models.user import User
 from app.schemas import BidCreate, BidRead
 
 router = APIRouter()

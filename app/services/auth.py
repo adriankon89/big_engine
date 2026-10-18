@@ -2,7 +2,7 @@ from app.core.exceptions import NoPermissionException, UnauthorizedException
 from app.core.jwt import create_access_token as encode_access_token
 from app.core.security import PasswordHasher
 from app.enums import UserStatus
-from app.models import User
+from app.models.user import User
 from app.services.user import UserService
 
 

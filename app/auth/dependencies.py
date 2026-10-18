@@ -9,7 +9,7 @@ from app.core.exceptions import InvalidTokenError
 from app.core.jwt import decode_access_token
 from app.database import get_db
 from app.enums import Role
-from app.models import User
+from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 

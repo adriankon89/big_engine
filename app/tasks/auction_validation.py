@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.celery_app import celery_app
 from app.config import get_settings
 from app.database import SessionLocal
-from app.models import Auction
+from app.models.auction import Auction
 from app.services.auction_validator.base import AuctionValidator
 from app.services.auction_validator.factory import get_auction_validator
 

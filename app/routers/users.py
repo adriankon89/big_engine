@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from app.auth.dependencies import get_current_user, require_role
 from app.dependencies import get_user_service
 from app.enums import Role
-from app.models import User
+from app.models.user import User
 from app.schemas import (
     AdminResetPasswordRequest,
     ChangePasswordRequest,
