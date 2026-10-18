@@ -1,7 +1,9 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.enums import RejectionSource, VerificationStatus
 
 
 class AuctionRead(BaseModel):
@@ -17,6 +19,25 @@ class AuctionRead(BaseModel):
     status: str
     starts_at: datetime
     ends_at: datetime
+
+
+class AuctionReviewRead(AuctionRead):
+    verification_status: VerificationStatus
+    rejection_reason: str | None
+    rejection_source: RejectionSource | None
+    rejected_by_id: int | None
+
+
+class AuctionRejectRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, reason: str) -> str:
+        normalized_reason = reason.strip()
+        if not normalized_reason:
+            raise ValueError("A rejection reason is required")
+        return normalized_reason
 
 
 class AuctionImageCreate(BaseModel):

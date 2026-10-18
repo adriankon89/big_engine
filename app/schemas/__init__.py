@@ -3,6 +3,8 @@ from app.schemas.auction import (
     AuctionCreateResponse,
     AuctionImageCreate,
     AuctionRead,
+    AuctionRejectRequest,
+    AuctionReviewRead,
 )
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.bid import BidCreate, BidRead
@@ -24,6 +26,8 @@ __all__ = [
     "AuctionCreateResponse",
     "AuctionImageCreate",
     "AuctionRead",
+    "AuctionRejectRequest",
+    "AuctionReviewRead",
     "BidCreate",
     "BidRead",
     "ChangePasswordRequest",

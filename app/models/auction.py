@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.enums import AuctionStatus, VerificationStatus
+from app.enums import AuctionStatus, RejectionSource, VerificationStatus
 from app.models.base import Base
 
 
@@ -43,6 +43,13 @@ class Auction(Base):
         Enum(VerificationStatus),
         default=VerificationStatus.PENDING,
         nullable=False,
+    )
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejection_source: Mapped[RejectionSource | None] = mapped_column(
+        Enum(RejectionSource), nullable=True
+    )
+    rejected_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
     )
     currency: Mapped[str] = mapped_column(String(3), default="PLN")
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
@@ -72,5 +79,20 @@ class Auction(Base):
     def verification_status(self) -> VerificationStatus:
         return self._verification_status
 
-    def reject(self) -> None:
+    def reject(
+        self,
+        source: RejectionSource,
+        reason: str,
+        rejected_by_id: int | None = None,
+    ) -> None:
+        if not reason.strip():
+            raise ValueError("A rejection reason is required")
+        if source == RejectionSource.USER and rejected_by_id is None:
+            raise ValueError("A user rejection requires rejected_by_id")
+        if source == RejectionSource.AI and rejected_by_id is not None:
+            raise ValueError("An AI rejection cannot have rejected_by_id")
+
         self._verification_status = VerificationStatus.REJECTED
+        self.rejection_source = source
+        self.rejection_reason = reason.strip()
+        self.rejected_by_id = rejected_by_id

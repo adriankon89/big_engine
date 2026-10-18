@@ -4,12 +4,18 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import ValidationError
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_roles
 from app.core.upload_validation import IMAGE_UPLOAD_POLICY, validate_uploads
 from app.dependencies import get_auction_service
 from app.dto import UploadedFileDTO
+from app.enums import Role
 from app.models.user import User
-from app.schemas.auction import AuctionCreate, AuctionRead
+from app.schemas.auction import (
+    AuctionCreate,
+    AuctionRead,
+    AuctionRejectRequest,
+    AuctionReviewRead,
+)
 from app.services.auction_service import AuctionService
 
 router = APIRouter()
@@ -25,10 +31,56 @@ def get_auctions(
 
 
 @router.get(
-    "/auctions/{auction_id}", response_model=AuctionRead, status_code=status.HTTP_200_OK
+    "/auctions/{auction_id}",
+    response_model=AuctionReviewRead,
+    status_code=status.HTTP_200_OK,
 )
-def get_auction(auction_id: int):
-    return {"message": f"Details of auction {auction_id}"}
+def get_auction(
+    auction_id: int,
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    auction = auction_service.get(auction_id)
+    if auction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+        )
+    if auction.seller_id != current_user.id and current_user.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
+    return auction
+
+
+@router.post(
+    "/auctions/{auction_id}/reject",
+    response_model=AuctionReviewRead,
+    status_code=status.HTTP_200_OK,
+)
+def reject_auction(
+    auction_id: int,
+    payload: AuctionRejectRequest,
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    moderator: Annotated[User, Depends(require_roles(Role.ADMIN))],
+):
+    auction = auction_service.reject(auction_id, payload.reason, moderator)
+    if auction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+        )
+    return auction
+
+
+@router.post(
+    "/admin/auctions",
+    response_model=list[AuctionReviewRead],
+    status_code=status.HTTP_200_OK,
+)
+def get_admin_auctions(
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    _: Annotated[User, Depends(require_roles(Role.ADMIN))],
+):
+    return auction_service.list()
 
 
 @router.post(

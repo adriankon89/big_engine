@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel
 
-from .base import AuctionValidator
+from .base import AuctionValidationResult, AuctionValidator
 
 
 class AuctionCheckResult(BaseModel):
@@ -16,12 +16,12 @@ class AuctionCheckResult(BaseModel):
 
 class GenAIAuctionValidator(AuctionValidator):
 
-    def __init__(self, client: genai.Client):
+    def __init__(self, client: genai.Client) -> None:
         self.client = client
 
     def validate_auction(
         self, image_paths: Sequence[Path], title: str, description: str
-    ) -> bool:
+    ) -> AuctionValidationResult:
         images = [PIL.Image.open(image_path) for image_path in image_paths]
 
         prompt = """
@@ -30,6 +30,8 @@ class GenAIAuctionValidator(AuctionValidator):
         1. Nudity, sexually explicit content, or adult themes.
         2. Profanity, hate speech, or offensive language in the description.
         3. Illegal items or dangerous goods.
+        Return a concise, user-facing explanation in the reason field. Do not include
+        internal reasoning or hidden analysis.
         """
 
         response = self.client.models.generate_content(
@@ -41,4 +43,11 @@ class GenAIAuctionValidator(AuctionValidator):
             ),
         )
 
-        return response.parsed.is_valid
+        result = response.parsed
+        if result is None:
+            raise ValueError("Auction validator returned no structured result")
+        return AuctionValidationResult(
+            is_valid=result.is_valid,
+            reason=result.reason.strip()
+            or "The listing did not meet our auction requirements.",
+        )
