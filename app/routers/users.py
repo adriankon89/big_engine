@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 
 from app.auth.dependencies import get_current_user, require_role
 from app.dependencies import get_user_service
 from app.enums import Role
+from app.infrastructure.rate_limiter import limiter
 from app.models.user import User
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
@@ -34,7 +35,9 @@ def list_users(
 
 
 @router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/hour")
 def create_user(
+    request: Request,
     payload: UserCreate,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
@@ -44,7 +47,9 @@ def create_user(
 @router.patch(
     "/users/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK
 )
+@limiter.limit("30/minute")
 def update_user(
+    request: Request,
     user_id: int,
     payload: UserUpdate,
     user_service: Annotated[UserService, Depends(get_user_service)],
@@ -54,7 +59,9 @@ def update_user(
 
 
 @router.post("/users/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/hour")
 def change_password(
+    request: Request,
     payload: ChangePasswordRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     user_service: Annotated[UserService, Depends(get_user_service)],
@@ -66,8 +73,10 @@ def change_password(
     )
 
 
-@router.post("users/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/users/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/hour")
 def admin_reset_password(
+    request: Request,
     user_id: int,
     payload: AdminResetPasswordRequest,
     user_service: Annotated[UserService, Depends(get_user_service)],
@@ -79,11 +88,13 @@ def admin_reset_password(
 
 
 @router.post(
-    "users/{user_id}/status",
+    "/users/{user_id}/status",
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_role(Role.ADMIN))],
 )
+@limiter.limit("30/minute")
 def update_status(
+    request: Request,
     user_id: int,
     payload: UserStatusUpdate,
     user_service: Annotated[UserService, Depends(get_user_service)],

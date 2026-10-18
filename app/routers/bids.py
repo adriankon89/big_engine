@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
+from app.infrastructure.rate_limiter import limiter
 from app.models.bid import Bid
 from app.models.user import User
 from app.schemas.bid import BidCreate, BidRead
@@ -13,7 +14,12 @@ router = APIRouter()
 
 
 @router.post("/bids", response_model=BidRead, status_code=status.HTTP_201_CREATED)
-def create_bid(payload: BidCreate, db: Annotated[Session, Depends(get_db)]) -> Bid:
+@limiter.limit("10/minute")
+def create_bid(
+    request: Request,
+    payload: BidCreate,
+    db: Annotated[Session, Depends(get_db)],
+) -> Bid:
     bid = Bid(**payload.model_dump())
     db.add(bid)
     db.commit()

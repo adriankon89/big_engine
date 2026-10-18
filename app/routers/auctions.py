@@ -1,7 +1,16 @@
 import json
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from pydantic import ValidationError
 
 from app.auth.dependencies import get_current_user, require_roles
@@ -9,6 +18,7 @@ from app.core.upload_validation import IMAGE_UPLOAD_POLICY, validate_uploads
 from app.dependencies import get_auction_service
 from app.dto import UploadedFileDTO
 from app.enums import Role
+from app.infrastructure.rate_limiter import limiter
 from app.models.user import User
 from app.schemas.auction import (
     AuctionCreate,
@@ -57,7 +67,9 @@ def get_auction(
     response_model=AuctionReviewRead,
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit("20/minute")
 def reject_auction(
+    request: Request,
     auction_id: int,
     payload: AuctionRejectRequest,
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
@@ -88,7 +100,9 @@ def get_admin_auctions(
     # response_model=AuctionCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("5/hour")
 def create_auction(
+    request: Request,
     auction_data: Annotated[str, Form(description="JSON string of AuctionCreate")],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     current_user: Annotated[User, Depends(get_current_user)],
