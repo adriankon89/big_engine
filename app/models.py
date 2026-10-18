@@ -142,6 +142,9 @@ class Auction(Base):
 
     images: Mapped[list["AuctionImage"]] = relationship(back_populates="auction")
 
+    def reject(self) -> None:
+        self.verification_status = VerificationStatus.REJECTED
+
 
 class AuctionImage(Base):
     __tablename__ = "auction_images"

@@ -32,6 +32,9 @@ def auction_validation(self, auction_id: int) -> dict[str, object]:
             image_paths, auction.title, auction.description
         )
 
+        if not validation_result:
+            auction.reject()
+
         return {
             "auction_id": auction.id,
             "title": auction.title,
