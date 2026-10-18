@@ -4,8 +4,14 @@ from pathlib import Path
 import PIL.Image
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 
 from .base import AuctionValidator
+
+
+class AuctionCheckResult(BaseModel):
+    is_valid: bool
+    reason: str
 
 
 class GenAIAuctionValidator(AuctionValidator):
@@ -24,18 +30,15 @@ class GenAIAuctionValidator(AuctionValidator):
         1. Nudity, sexually explicit content, or adult themes.
         2. Profanity, hate speech, or offensive language in the description.
         3. Illegal items or dangerous goods.
-
-        Respond strictly in JSON format with the following keys:
-        - "is_valid": boolean (true if clean, false if it violates rules)
-        - "reason": string (brief explanation if invalid, or "OK" if valid)
         """
 
-        self.client.models.generate_content(
-            model="gemini-2.5-flash",  # Fast and cost-effective model
+        response = self.client.models.generate_content(
+            model="gemini-2.5-flash",
             contents=[*images, title, description, prompt],
-            config=types.GenerateContentConfig(response_mime_type="application/json"),
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=AuctionCheckResult,
+            ),
         )
 
-        # return json.loads(response.text)
-        # let someone else handle the response for now, just return True
-        return True
+        return response.parsed.is_valid
