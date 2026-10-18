@@ -1,7 +1,12 @@
+from collections.abc import Sequence
+from pathlib import Path
+
 from .base import AuctionValidator
 
 
 class MockAuctionValidator(AuctionValidator):
-    def validate(self, auction_id: int) -> bool:
-        print(f"[MOCK] Validating auction ID: {auction_id}")
+    def validate_auction(
+        self, image_paths: Sequence[Path], title: str, description: str
+    ) -> bool:
+        print(f"[MOCK] Validating auction: {title}")
         return True

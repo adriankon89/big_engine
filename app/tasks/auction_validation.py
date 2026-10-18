@@ -1,9 +1,14 @@
+from pathlib import Path
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.celery_app import celery_app
+from app.config import get_settings
 from app.database import SessionLocal
 from app.models import Auction
+from app.services.auction_validator.base import AuctionValidator
+from app.services.auction_validator.factory import get_auction_validator
 
 
 @celery_app.task(name="auction_validation", bind=True)
@@ -18,9 +23,19 @@ def auction_validation(self, auction_id: int) -> dict[str, object]:
         if auction is None:
             return {"error": "auction_not_found", "auction_id": auction_id}
 
+        auction_validator: AuctionValidator = get_auction_validator()
+        image_paths: list[Path] = [
+            Path(get_settings().UPLOAD_DIR) / image.storage_key
+            for image in auction.images
+        ]
+        validation_result: bool = auction_validator.validate_auction(
+            image_paths, auction.title, auction.description
+        )
+
         return {
             "auction_id": auction.id,
             "title": auction.title,
+            "is_valid": validation_result,
             "images": [
                 {
                     "id": image.id,

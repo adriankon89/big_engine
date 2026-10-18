@@ -10,3 +10,5 @@ pwdlib[argon2]
 pyjwt[cryptography]>=2.8.0
 celery[redis]>=5.4,<6
 python-multipart>=0.0.18
+google-genai>=1.0.0
+Pillow>=10.0.0
