@@ -15,7 +15,9 @@ from app.services.auction_validator.base import (
 from app.services.auction_validator.factory import get_auction_validator
 
 
-@celery_app.task(name="auction_validation", bind=True)
+@celery_app.task(
+    name="auction_validation", bind=True, max_retries=2, retry_backoff=True
+)
 def auction_validation(self, auction_id: int) -> dict[str, object]:
     with SessionLocal() as db:
         auction = db.scalar(
