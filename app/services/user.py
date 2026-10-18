@@ -14,8 +14,8 @@ from app.core.security import PasswordHasher
 from app.enums import Role, SortOrder, UserSortBy, UserStatus
 from app.models.user import User
 from app.models.wallet import Wallet
-from app.schemas import (
-    PaginatedResponse,
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.user import (
     UserCreate,
     UserFilterParams,
     UserResponse,

@@ -9,7 +9,7 @@ from app.core.upload_validation import IMAGE_UPLOAD_POLICY, validate_uploads
 from app.dependencies import get_auction_service
 from app.dto import UploadedFileDTO
 from app.models.user import User
-from app.schemas import AuctionCreate, AuctionRead
+from app.schemas.auction import AuctionCreate, AuctionRead
 from app.services.auction_service import AuctionService
 
 router = APIRouter()

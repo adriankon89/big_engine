@@ -7,7 +7,7 @@ from app.dto import UploadedFileDTO
 from app.models.auction import Auction
 from app.models.auction_image import AuctionImage
 from app.models.user import User
-from app.schemas import AuctionCreate
+from app.schemas.auction import AuctionCreate
 from app.services.file_storage import FileStorage
 from app.tasks.auction_validation import auction_validation
 

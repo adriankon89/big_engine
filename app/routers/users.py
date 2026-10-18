@@ -6,10 +6,10 @@ from app.auth.dependencies import get_current_user, require_role
 from app.dependencies import get_user_service
 from app.enums import Role
 from app.models.user import User
-from app.schemas import (
+from app.schemas.pagination import PaginatedResponse
+from app.schemas.user import (
     AdminResetPasswordRequest,
     ChangePasswordRequest,
-    PaginatedResponse,
     UserCreate,
     UserFilterParams,
     UserResponse,
