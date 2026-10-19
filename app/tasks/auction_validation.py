@@ -46,7 +46,7 @@ def auction_validation(self, auction_id: int) -> dict[str, object]:
             )
         except APIError as exc:
             if self.request.retries >= self.max_retries:
-                auction.assign_to_moderator()
+                auction.assign_to_moderator("LLM API failure limit reached")
                 db.commit()
 
                 return {

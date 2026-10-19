@@ -36,7 +36,6 @@ class Auction(Base):
         SQLEnum(AuctionStatus),
         default=AuctionStatus.DRAFT,
         nullable=False,
-        # todo jaka różnia pomiędzy sqlnum a enum w sqlalchemy
     )
     _verification_status: Mapped[VerificationStatus] = mapped_column(
         "verification_status",
@@ -50,6 +49,9 @@ class Auction(Base):
     )
     rejected_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
+    )
+    moderator_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
     )
     currency: Mapped[str] = mapped_column(String(3), default="PLN")
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
@@ -97,5 +99,6 @@ class Auction(Base):
         self.rejection_reason = reason.strip()
         self.rejected_by_id = rejected_by_id
 
-    def assign_to_moderator(self) -> None:
-        pass
+    def assign_to_moderator(self, reason: str) -> None:
+        self._verification_status = VerificationStatus.MANUAL_REVIEW
+        self.rejection_reason = reason

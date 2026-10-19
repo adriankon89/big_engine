@@ -45,6 +45,7 @@ class VerificationStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+    MANUAL_REVIEW = "manual_review"
 
 
 class RejectionSource(str, Enum):
