@@ -96,3 +96,6 @@ class Auction(Base):
         self.rejection_source = source
         self.rejection_reason = reason.strip()
         self.rejected_by_id = rejected_by_id
+
+    def assign_to_moderator(self) -> None:
+        pass

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from google.genai.errors import APIError
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -36,9 +37,25 @@ def auction_validation(self, auction_id: int) -> dict[str, object]:
             Path(get_settings().UPLOAD_DIR) / image.storage_key
             for image in auction.images
         ]
-        validation_result: AuctionValidationResult = auction_validator.validate_auction(
-            image_paths, auction.title, auction.description
-        )
+
+        try:
+            validation_result: AuctionValidationResult = (
+                auction_validator.validate_auction(
+                    image_paths, auction.title, auction.description
+                )
+            )
+        except APIError as exc:
+            if self.request.retries >= self.max_retries:
+                auction.assign_to_moderator()
+                db.commit()
+
+                return {
+                    "auction_id": auction.id,
+                    "status": "sent_to_moderator",
+                    "reason": "LLM API failure limit reached",
+                }
+
+            raise self.retry(exc=exc)
 
         if not validation_result.is_valid:
             auction.reject(
