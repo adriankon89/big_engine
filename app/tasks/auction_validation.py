@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.celery_app import celery_app
 from app.config import get_settings
 from app.database import SessionLocal
-from app.enums import RejectionSource
+from app.enums import AuctionStatus, RejectionSource, VerificationStatus
 from app.models.auction import Auction
 from app.services.auction_validator.base import (
     AuctionValidationResult,
@@ -24,6 +24,8 @@ def auction_validation(self, auction_id: int) -> dict[str, object]:
             select(Auction)
             .options(selectinload(Auction.images))
             .where(Auction.id == auction_id)
+            .where(Auction._status == AuctionStatus.DRAFT)
+            .where(Auction._verification_status == VerificationStatus.PENDING)
         )
 
         if auction is None:
