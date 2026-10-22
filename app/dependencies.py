@@ -9,6 +9,7 @@ from app.database import get_db
 from app.services.auction_service import AuctionService
 from app.services.auth import AuthService
 from app.services.file_storage import LocalFileStorage
+from app.services.moderator_assignment_service import ModeratorAssignmentService
 from app.services.user import UserService
 from app.services.wallet_service import WalletService
 
@@ -19,7 +20,10 @@ def get_user_service(db: Annotated[Session, Depends(get_db)]) -> UserService:
 
 def get_auction_service(db: Annotated[Session, Depends(get_db)]) -> AuctionService:
     storage = LocalFileStorage(root=get_settings().UPLOAD_DIR)
-    return AuctionService(db=db, storage=storage)
+    moderator_assignment = ModeratorAssignmentService(db=db)
+    return AuctionService(
+        db=db, storage=storage, moderator_assignment=moderator_assignment
+    )
 
 
 def get_auth_service(
