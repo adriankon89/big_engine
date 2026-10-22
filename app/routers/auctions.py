@@ -55,7 +55,10 @@ def get_auction(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
         )
-    if auction.seller_id != current_user.id and current_user.role != Role.ADMIN:
+    if auction.seller_id != current_user.id and current_user.role not in (
+        Role.ADMIN,
+        Role.MODERATOR,
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -73,7 +76,7 @@ def reject_auction(
     auction_id: int,
     payload: AuctionRejectRequest,
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
-    moderator: Annotated[User, Depends(require_roles(Role.ADMIN))],
+    moderator: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 ):
     auction = auction_service.reject(auction_id, payload.reason, moderator)
     if auction is None:
@@ -90,7 +93,7 @@ def reject_auction(
 )
 def get_admin_auctions(
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
-    _: Annotated[User, Depends(require_roles(Role.ADMIN))],
+    _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 ):
     return auction_service.list()
 

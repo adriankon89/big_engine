@@ -9,6 +9,7 @@ class UserStatus(str, Enum):
 
 class Role(str, Enum):
     ADMIN = "admin"
+    MODERATOR = "moderator"
     USER = "user"
     GUEST = "guest"
 
