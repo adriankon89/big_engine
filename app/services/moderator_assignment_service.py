@@ -1,14 +1,25 @@
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.enums import Role, UserStatus
+from app.enums import (
+    ModeratorAssignmentStrategy,
+    Role,
+    UserStatus,
+    VerificationStatus,
+)
+from app.models.auction import Auction
 from app.models.moderator_assignment_state import ModeratorAssignmentState
 from app.models.user import User
 
 
 class ModeratorAssignmentService:
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        db: Session,
+        strategy: ModeratorAssignmentStrategy = ModeratorAssignmentStrategy.ROUND_ROBIN,
+    ) -> None:
         self.db: Session = db
+        self.strategy = strategy
 
     def next_moderator_id(self, seller_id: int) -> int | None:
         state: ModeratorAssignmentState = self._lock_assignment_state()
@@ -16,10 +27,13 @@ class ModeratorAssignmentService:
         if not moderator_ids:
             return None
 
-        moderator_id: int = self._select_next_moderator_id(
-            moderator_ids, state.last_moderator_id
-        )
-        state.last_moderator_id = moderator_id
+        if self.strategy == ModeratorAssignmentStrategy.ROUND_ROBIN:
+            moderator_id = self._select_next_moderator_id(
+                moderator_ids, state.last_moderator_id
+            )
+            state.last_moderator_id = moderator_id
+        else:
+            moderator_id = self._select_least_assigned_moderator_id(moderator_ids)
         return moderator_id
 
     def _lock_assignment_state(self) -> ModeratorAssignmentState:
@@ -67,3 +81,29 @@ class ModeratorAssignmentService:
                 next_index: int = (previous_index + 1) % len(moderator_ids)
 
         return moderator_ids[next_index]
+
+    def _select_least_assigned_moderator_id(self, moderator_ids: list[int]) -> int:
+        assignment_counts: dict[int, int] = {}
+        assignment_rows = self.db.execute(
+            select(Auction.moderator_id, func.count(Auction.id))
+            .where(
+                Auction.moderator_id.in_(moderator_ids),
+                Auction._verification_status.in_(
+                    [
+                        VerificationStatus.PENDING,
+                        VerificationStatus.MANUAL_REVIEW,
+                    ]
+                ),
+            )
+            .group_by(Auction.moderator_id)
+        )
+        for moderator_id, assignment_count in assignment_rows:
+            if moderator_id is not None:
+                assignment_counts[moderator_id] = assignment_count
+        return min(
+            moderator_ids,
+            key=lambda moderator_id: (
+                assignment_counts.get(moderator_id, 0),
+                moderator_id,
+            ),
+        )

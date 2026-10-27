@@ -4,6 +4,8 @@ from pathlib import Path
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.enums import ModeratorAssignmentStrategy
+
 
 class Settings(BaseSettings):
     # App Settings
@@ -22,6 +24,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./bid_engine.db"
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+    MODERATOR_ASSIGNMENT_STRATEGY: ModeratorAssignmentStrategy = (
+        ModeratorAssignmentStrategy.ROUND_ROBIN
+    )
 
     DEFAULT_RATE_LIMIT: str = "200/minute"
 

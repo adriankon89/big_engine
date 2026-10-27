@@ -52,3 +52,8 @@ class VerificationStatus(str, Enum):
 class RejectionSource(str, Enum):
     USER = "user"
     AI = "ai"
+
+
+class ModeratorAssignmentStrategy(str, Enum):
+    ROUND_ROBIN = "round_robin"
+    LEAST_ASSIGNED = "least_assigned"

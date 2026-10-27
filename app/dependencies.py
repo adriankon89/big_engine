@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.core.security import PasswordHasher
 from app.database import get_db
+from app.enums import ModeratorAssignmentStrategy
 from app.services.auction_service import AuctionService
 from app.services.auth import AuthService
 from app.services.file_storage import LocalFileStorage
@@ -19,8 +20,12 @@ def get_user_service(db: Annotated[Session, Depends(get_db)]) -> UserService:
 
 
 def get_auction_service(db: Annotated[Session, Depends(get_db)]) -> AuctionService:
-    storage = LocalFileStorage(root=get_settings().UPLOAD_DIR)
-    moderator_assignment = ModeratorAssignmentService(db=db)
+    settings = get_settings()
+    storage = LocalFileStorage(root=settings.UPLOAD_DIR)
+    moderator_assignment = ModeratorAssignmentService(
+        db=db,
+        strategy=ModeratorAssignmentStrategy(settings.MODERATOR_ASSIGNMENT_STRATEGY),
+    )
     return AuctionService(
         db=db, storage=storage, moderator_assignment=moderator_assignment
     )
