@@ -48,6 +48,24 @@ class AuctionService:
         self.db.refresh(auction)
         return auction
 
+    @staticmethod
+    def _build_auction_image(
+        auction_id: int,
+        storage_key: str,
+        image: UploadedFileDTO,
+        position: int,
+        is_primary: bool,
+    ) -> AuctionImage:
+        return AuctionImage(
+            auction_id=auction_id,
+            storage_key=storage_key,
+            original_filename=image.filename,
+            file_size=len(image.content),
+            mime_type=image.content_type,
+            position=position,
+            is_primary=is_primary,
+        )
+
     def create(
         self, payload: AuctionCreate, images: builtins.list[UploadedFileDTO], user: User
     ) -> Auction:
@@ -72,12 +90,10 @@ class AuctionService:
                     payload.images[position] if position < len(payload.images) else None
                 )
                 self.db.add(
-                    AuctionImage(
+                    self._build_auction_image(
                         auction_id=auction.id,
                         storage_key=storage_key,
-                        original_filename=image.filename,
-                        file_size=len(image.content),
-                        mime_type=image.content_type,
+                        image=image,
                         position=metadata.order if metadata else position,
                         is_primary=(
                             metadata.is_primary
