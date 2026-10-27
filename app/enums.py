@@ -40,6 +40,14 @@ class ModeratorSortBy(str, Enum):
     CREATED_AT = "created_at"
 
 
+class AuctionSortBy(str, Enum):
+    ID = "id"
+    TITLE = "title"
+    START_TIME = "start_time"
+    END_TIME = "end_time"
+    CREATED_AT = "created_at"
+
+
 class AuctionStatus(str, Enum):
     DRAFT = "draft"
     SCHEDULED = "scheduled"

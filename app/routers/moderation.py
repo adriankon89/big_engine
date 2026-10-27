@@ -3,11 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.auth.dependencies import require_role
-from app.dependencies import get_user_service
+from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
 from app.schemas.moderation import ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserResponse
+from app.services.auction_service import AuctionService
 from app.services.user import UserService
 
 router = APIRouter(prefix="/moderation")
@@ -28,5 +29,8 @@ def list_moderators(
 @router.get(
     "/auctions/manual-review",
 )
-def auction_manual_review() -> dict:
+def auction_manual_review(
+    params: Annotated[ModeratorFilterParams, Depends()],
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+) -> dict:
     return {"message": "This endpoint is under construction."}
