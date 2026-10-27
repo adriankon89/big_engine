@@ -8,7 +8,8 @@ from app.schemas.auction import (
 )
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.bid import BidCreate, BidRead
-from app.schemas.pagination import PaginatedResponse
+from app.schemas.moderation import ModeratorFilterParams
+from app.schemas.pagination import PaginatedResponse, PaginationParams
 from app.schemas.user import (
     AdminResetPasswordRequest,
     ChangePasswordRequest,
@@ -32,7 +33,9 @@ __all__ = [
     "BidRead",
     "ChangePasswordRequest",
     "LoginRequest",
+    "ModeratorFilterParams",
     "PaginatedResponse",
+    "PaginationParams",
     "TokenResponse",
     "UserCreate",
     "UserFilterParams",

@@ -1,11 +1,20 @@
 from math import ceil
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel
-
-from app.schemas.user import UserFilterParams
+from pydantic import BaseModel, Field
 
 T = TypeVar("T")
+
+
+class PaginationParams(BaseModel):
+    page: int = Field(default=1, ge=1, description="Page number")
+    page_size: int = Field(
+        default=20, ge=1, le=100, description="Elements amount per page"
+    )
+
+    @property
+    def offset(self) -> int:
+        return (self.page - 1) * self.page_size
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
@@ -17,7 +26,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
     @classmethod
     def create(
-        cls, items: list[T], total: int, params: UserFilterParams
+        cls, items: list[T], total: int, params: PaginationParams
     ) -> "PaginatedResponse[T]":
         return cls(
             items=items,

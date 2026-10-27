@@ -34,6 +34,12 @@ class UserSortBy(str, Enum):
     CREATED_AT = "created_at"
 
 
+class ModeratorSortBy(str, Enum):
+    ID = "id"
+    EMAIL = "email"
+    CREATED_AT = "created_at"
+
+
 class AuctionStatus(str, Enum):
     DRAFT = "draft"
     SCHEDULED = "scheduled"

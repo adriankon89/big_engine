@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.enums import Role, SortOrder, UserSortBy, UserStatus
+from app.schemas.pagination import PaginationParams
 
 
 class UserCreate(BaseModel):
@@ -47,11 +48,7 @@ class UserStatusUpdate(BaseModel):
     status: UserStatus
 
 
-class UserFilterParams(BaseModel):
-    page: int = Field(default=1, ge=1, description="Page number")
-    page_size: int = Field(
-        default=20, ge=1, le=100, description="Elements amount per page"
-    )
+class UserFilterParams(PaginationParams):
     sort_by: UserSortBy = Field(
         default=UserSortBy.CREATED_AT, description="Sort order field"
     )
@@ -60,7 +57,3 @@ class UserFilterParams(BaseModel):
     min_balance: float | None = Field(default=None, ge=0, description="minimal balance")
     search: str | None = Field(default=None, description="Search by email")
     role: Role | None = Field(default=None, description="User role")
-
-    @property
-    def offset(self) -> int:
-        return (self.page - 1) * self.page_size

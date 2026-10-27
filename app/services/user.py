@@ -11,9 +11,10 @@ from app.core.exceptions import (
     UserNotFoundError,
 )
 from app.core.security import PasswordHasher
-from app.enums import Role, SortOrder, UserSortBy, UserStatus
+from app.enums import ModeratorSortBy, Role, SortOrder, UserSortBy, UserStatus
 from app.models.user import User
 from app.models.wallet import Wallet
+from app.schemas.moderation import ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
     UserCreate,
@@ -67,6 +68,36 @@ class UserService:
 
         return PaginatedResponse[UserResponse].create(
             items=user_reads, total=total, params=params
+        )
+
+    def list_moderators(
+        self, params: ModeratorFilterParams
+    ) -> PaginatedResponse[UserResponse]:
+        stmt = select(User).where(User.role == Role.MODERATOR)
+
+        if params.status is not None:
+            stmt = stmt.where(User.status == params.status)
+
+        if params.search:
+            stmt = stmt.where(User.email.ilike(f"%{params.search}%"))
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.scalar(count_stmt) or 0
+
+        sort_column_map = {
+            ModeratorSortBy.ID: User.id,
+            ModeratorSortBy.EMAIL: User.email,
+            ModeratorSortBy.CREATED_AT: User.created_at,
+        }
+        target_column = sort_column_map[params.sort_by]
+        order_func = desc if params.order == SortOrder.DESC else asc
+        stmt = stmt.order_by(order_func(target_column))
+        stmt = stmt.offset(params.offset).limit(params.page_size)
+
+        moderators = list(self.db.scalars(stmt).all())
+        items = [UserResponse.model_validate(moderator) for moderator in moderators]
+        return PaginatedResponse[UserResponse].create(
+            items=items, total=total, params=params
         )
 
     def create_user(self, payload: UserCreate) -> User:
