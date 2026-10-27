@@ -1,5 +1,6 @@
 import builtins
 import logging
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
@@ -9,7 +10,7 @@ from app.enums import RejectionSource
 from app.models.auction import Auction
 from app.models.auction_image import AuctionImage
 from app.models.user import User
-from app.schemas.auction import AuctionCreate
+from app.schemas.auction import AuctionCreate, AuctionImageCreate
 from app.services.file_storage import FileStorage
 from app.services.moderator_assignment_service import ModeratorAssignmentService
 from app.tasks.auction_validation import auction_validation
@@ -69,11 +70,15 @@ class AuctionService:
     def create(
         self, payload: AuctionCreate, images: builtins.list[UploadedFileDTO], user: User
     ) -> Auction:
-        auction_data = payload.model_dump(exclude={"images"})
+        auction_data: builtins.dict[builtins.str, Any] = payload.model_dump(
+            exclude={"images"}
+        )
         saved_storage_keys: list[str] = []
 
         try:
-            moderator_id = self.moderator_assignment.next_moderator_id(user.id)
+            moderator_id: builtins.int | None = (
+                self.moderator_assignment.next_moderator_id(user.id)
+            )
             auction = Auction(
                 **auction_data,
                 seller_id=user.id,
@@ -86,7 +91,7 @@ class AuctionService:
                 self.storage.save(storage_key, image.content)
                 saved_storage_keys.append(storage_key)
 
-                metadata = (
+                metadata: AuctionImageCreate | None = (
                     payload.images[position] if position < len(payload.images) else None
                 )
                 self.db.add(
