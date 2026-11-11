@@ -76,6 +76,11 @@ class AuctionService:
         saved_storage_keys: list[str] = []
 
         try:
+            for image in images:
+                storage_key = uuid4().hex
+                self.storage.save(storage_key, image.content)
+                saved_storage_keys.append(storage_key)
+
             moderator_id: builtins.int | None = (
                 self.moderator_assignment.next_moderator_id(user.id)
             )
@@ -87,17 +92,13 @@ class AuctionService:
             self.db.add(auction)
             self.db.flush()
             for position, image in enumerate(images):
-                storage_key = uuid4().hex
-                self.storage.save(storage_key, image.content)
-                saved_storage_keys.append(storage_key)
-
                 metadata: AuctionImageCreate | None = (
                     payload.images[position] if position < len(payload.images) else None
                 )
                 self.db.add(
                     self._build_auction_image(
                         auction_id=auction.id,
-                        storage_key=storage_key,
+                        storage_key=saved_storage_keys[position],
                         image=image,
                         position=metadata.order if metadata else position,
                         is_primary=(
@@ -109,18 +110,24 @@ class AuctionService:
                 )
 
             self.db.commit()
-            self.db.refresh(auction)
-            if moderator_id is None:
-                logger.warning(
-                    "Auction created without an assigned moderator",
-                    extra={"auction_id": auction.id, "seller_id": user.id},
-                )
-            auction_validation.delay(auction.id)
-
         except Exception:
             self.db.rollback()
             for storage_key in saved_storage_keys:
-                self.storage.delete(storage_key)
+                try:
+                    self.storage.delete(storage_key)
+                except Exception:
+                    logger.exception(
+                        "Failed to clean up auction image after creation failure",
+                        extra={"storage_key": storage_key},
+                    )
             raise
+
+        self.db.refresh(auction)
+        if moderator_id is None:
+            logger.warning(
+                "Auction created without an assigned moderator",
+                extra={"auction_id": auction.id, "seller_id": user.id},
+            )
+        auction_validation.delay(auction.id)
 
         return auction
