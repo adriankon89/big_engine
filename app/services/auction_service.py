@@ -7,7 +7,7 @@ from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from app.dto import UploadedFileDTO
-from app.enums import RejectionSource, SortOrder
+from app.enums import RejectionSource, SortOrder, VerificationStatus
 from app.models.auction import Auction
 from app.models.auction_image import AuctionImage
 from app.models.user import User
@@ -144,6 +144,9 @@ class AuctionService:
 
     def list_auctions_for_manual_review(self, params: ModeratorAuctionFilterParams):
         stmt = select(Auction)
+        stmt = stmt.where(
+            Auction._verification_status == VerificationStatus.MANUAL_REVIEW
+        )
 
         order_func = desc if params.order == SortOrder.DESC else asc
 
