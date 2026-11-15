@@ -148,12 +148,12 @@ class AuctionService:
         order_func = desc if params.order == SortOrder.DESC else asc
 
         # todo  status: UserStatus | None = Field(default=None, description="Filter by status") only active users
-        stmt.order_by(order_func(Auction.created_at))
+        stmt = stmt.order_by(order_func(Auction.created_at))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = self.db.scalar(count_stmt) or 0
 
-        stmt.offset(params.offset).limit(params.page_size)
+        stmt = stmt.offset(params.offset).limit(params.page_size)
 
         auctions: list[Auction] = list(self.db.scalars(stmt).all())
         auction_reads = [
