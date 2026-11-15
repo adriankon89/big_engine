@@ -87,5 +87,5 @@ class AuctionCreateResponse(BaseModel):
     id: int
 
 
-class AuctionsForManualReviewResponse(AuctionRead):
+class AuctionsForManualReviewResponse(AuctionReviewRead):
     pass
