@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, status
 from app.auth.dependencies import require_role
 from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
-from app.schemas.moderation import ModeratorFilterParams
+from app.schemas.auction import AuctionsForManualReviewResponse
+from app.schemas.moderation import ModeratorAuctionFilterParams, ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserResponse
 from app.services.auction_service import AuctionService
@@ -30,7 +31,7 @@ def list_moderators(
     "/auctions/manual-review",
 )
 def auction_manual_review(
-    params: Annotated[ModeratorFilterParams, Depends()],
+    params: Annotated[ModeratorAuctionFilterParams, Depends()],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
-) -> dict:
-    return {"message": "This endpoint is under construction."}
+) -> PaginatedResponse[AuctionsForManualReviewResponse]:
+    return auction_service.list_auctions_for_manual_review(params)

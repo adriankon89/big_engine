@@ -3,14 +3,21 @@ import logging
 from typing import Any
 from uuid import uuid4
 
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from app.dto import UploadedFileDTO
-from app.enums import RejectionSource
+from app.enums import RejectionSource, SortOrder
 from app.models.auction import Auction
 from app.models.auction_image import AuctionImage
 from app.models.user import User
-from app.schemas.auction import AuctionCreate, AuctionImageCreate
+from app.schemas.auction import (
+    AuctionCreate,
+    AuctionImageCreate,
+    AuctionsForManualReviewResponse,
+)
+from app.schemas.moderation import ModeratorAuctionFilterParams
+from app.schemas.pagination import PaginatedResponse
 from app.services.file_storage import FileStorage
 from app.services.moderator_assignment_service import ModeratorAssignmentService
 from app.tasks.auction_validation import auction_validation
@@ -134,3 +141,26 @@ class AuctionService:
         auction_validation.delay(auction.id)
 
         return auction
+
+    def list_auctions_for_manual_review(self, params: ModeratorAuctionFilterParams):
+        stmt = select(Auction)
+
+        order_func = desc if params.order == SortOrder.DESC else asc
+
+        # todo  status: UserStatus | None = Field(default=None, description="Filter by status") only active users
+        stmt.order_by(order_func(Auction.created_at))
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.scalar(count_stmt) or 0
+
+        stmt.offset(params.offset).limit(params.page_size)
+
+        auctions: list[Auction] = list(self.db.scalars(stmt).all())
+        auction_reads = [
+            AuctionsForManualReviewResponse.model_validate(auction)
+            for auction in auctions
+        ]
+
+        return PaginatedResponse[AuctionsForManualReviewResponse].create(
+            items=auction_reads, total=total, params=params
+        )
