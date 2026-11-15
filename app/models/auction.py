@@ -99,6 +99,6 @@ class Auction(Base):
         self.rejection_reason = reason.strip()
         self.rejected_by_id = rejected_by_id
 
-    def assign_to_moderator(self, reason: str) -> None:
+    def mark_for_manual_review(self, reason: str) -> None:
         self._verification_status = VerificationStatus.MANUAL_REVIEW
         self.rejection_reason = reason
