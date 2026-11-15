@@ -139,7 +139,7 @@ def create_auction(
     ]
 
     auction = auction_service.create(
-        payload=payload, images=file_dtos, user=current_user
+        payload=payload, images=file_dtos, userId=current_user.id
     )
     return {
         "message": "Auction created",

@@ -68,7 +68,10 @@ class AuctionService:
         )
 
     def create(
-        self, payload: AuctionCreate, images: builtins.list[UploadedFileDTO], user: User
+        self,
+        payload: AuctionCreate,
+        images: builtins.list[UploadedFileDTO],
+        userId: int,
     ) -> Auction:
         auction_data: builtins.dict[builtins.str, Any] = payload.model_dump(
             exclude={"images"}
@@ -82,11 +85,11 @@ class AuctionService:
                 saved_storage_keys.append(storage_key)
 
             moderator_id: builtins.int | None = (
-                self.moderator_assignment.next_moderator_id(user.id)
+                self.moderator_assignment.next_moderator_id(userId)
             )
             auction = Auction(
                 **auction_data,
-                seller_id=user.id,
+                seller_id=userId,
                 moderator_id=moderator_id,
             )
             self.db.add(auction)
@@ -126,7 +129,7 @@ class AuctionService:
         if moderator_id is None:
             logger.warning(
                 "Auction created without an assigned moderator",
-                extra={"auction_id": auction.id, "seller_id": user.id},
+                extra={"auction_id": auction.id, "seller_id": userId},
             )
         auction_validation.delay(auction.id)
 
