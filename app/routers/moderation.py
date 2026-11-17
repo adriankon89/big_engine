@@ -25,18 +25,18 @@ router = APIRouter(prefix="/moderation")
 def list_moderators(
     params: Annotated[ModeratorFilterParams, Depends()],
     user_service: Annotated[UserService, Depends(get_user_service)],
-    _: Annotated[User, Depends(require_role(Role.ADMIN))],
 ) -> PaginatedResponse[UserResponse]:
     return user_service.list_moderators(params)
 
 
 @router.get(
     "/auctions/manual-review",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 )
 def auction_manual_review(
     params: Annotated[ModeratorAuctionFilterParams, Depends()],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
-    _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 ) -> PaginatedResponse[AuctionsForManualReviewResponse]:
     return auction_service.list_auctions_for_manual_review(params)
 
@@ -45,12 +45,12 @@ def auction_manual_review(
     "/auctions/{auction_id}/manual-review/approve",
     response_model=AuctionReviewRead,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 )
 def approve_auction_manual_review(
     auction_id: int,
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     current_user: Annotated[User, Depends(get_current_user)],
-    _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 ) -> AuctionReviewRead:
     try:
         auction: Auction | None = auction_service.approve_auction_manual_review(
