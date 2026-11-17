@@ -52,9 +52,15 @@ def approve_auction_manual_review(
     current_user: Annotated[User, Depends(get_current_user)],
     _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 ) -> AuctionReviewRead:
-    auction: Auction | None = auction_service.approve_auction_manual_review(
-        auction_id, current_user.id
-    )
+    try:
+        auction: Auction | None = auction_service.approve_auction_manual_review(
+            auction_id, current_user.id
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+
     if auction is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"

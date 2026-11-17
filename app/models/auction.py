@@ -104,10 +104,8 @@ class Auction(Base):
         self.rejection_reason = reason
 
     def approve_manual_review(self, moderator_id: int) -> None:
-        if self._verification_status == VerificationStatus.REJECTED:
-            self.rejection_reason = None
-            self.rejection_source = None
-            self.rejected_by_id = None
+        if self._verification_status != VerificationStatus.MANUAL_REVIEW:
+            raise ValueError("Only auctions in manual review can be approved")
 
         self._verification_status = VerificationStatus.APPROVED
         self.moderator_id = moderator_id
