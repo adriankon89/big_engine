@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import get_current_user, require_role, require_roles
 from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
 from app.models import User
 from app.models.auction import Auction
-from app.schemas.auction import AuctionsForManualReviewResponse
+from app.schemas.auction import AuctionReviewRead, AuctionsForManualReviewResponse
 from app.schemas.moderation import ModeratorAuctionFilterParams, ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserResponse
@@ -41,11 +41,22 @@ def auction_manual_review(
     return auction_service.list_auctions_for_manual_review(params)
 
 
-@router.post("/auctions/{auction_id}/manual-review/approve")
+@router.post(
+    "/auctions/{auction_id}/manual-review/approve",
+    response_model=AuctionReviewRead,
+    status_code=status.HTTP_200_OK,
+)
 def approve_auction_manual_review(
     auction_id: int,
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     current_user: Annotated[User, Depends(get_current_user)],
     _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
-) -> Auction | None:
-    return auction_service.approve_auction_manual_review(auction_id, current_user.id)
+) -> AuctionReviewRead:
+    auction: Auction | None = auction_service.approve_auction_manual_review(
+        auction_id, current_user.id
+    )
+    if auction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+        )
+    return AuctionReviewRead.model_validate(auction)
