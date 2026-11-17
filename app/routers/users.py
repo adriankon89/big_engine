@@ -8,7 +8,7 @@ from app.enums import Role
 from app.infrastructure.rate_limiter import limiter
 from app.models.auction import Auction
 from app.models.user import User
-from app.schemas.auction import AuctionRead
+from app.schemas.auction import AuctionRead, MyAuctionFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
     AdminResetPasswordRequest,
@@ -34,6 +34,7 @@ router = APIRouter()
 def get_my_auctions(
     current_user: Annotated[User, Depends(get_current_user)],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    params: MyAuctionFilterParams,
 ) -> list[Auction]:
     return auction_service.list_auctions_by_seller(current_user.id)
 

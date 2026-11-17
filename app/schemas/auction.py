@@ -3,7 +3,27 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.enums import RejectionSource, VerificationStatus
+from app.enums import (
+    AuctionSortBy,
+    AuctionStatus,
+    RejectionSource,
+    SortOrder,
+    VerificationStatus,
+)
+from app.schemas.pagination import PaginationParams
+
+
+class MyAuctionFilterParams(PaginationParams):
+    sort_by: AuctionSortBy = Field(
+        default=AuctionSortBy.CREATED_AT, description="Field to sort auctions by"
+    )
+    order: SortOrder = Field(default=SortOrder.ASC, description="Sort order")
+    status: AuctionStatus = Field(
+        default=AuctionStatus.OPEN, description="Filter by auction status"
+    )
+    verification_status: VerificationStatus | None = Field(
+        default=None, description="Filter by auction verification status"
+    )
 
 
 class AuctionRead(BaseModel):
