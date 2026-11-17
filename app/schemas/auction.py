@@ -91,17 +91,5 @@ class AuctionsForManualReviewResponse(AuctionReviewRead):
     pass
 
 
-class AuctionRejectRequest(BaseModel):
-    reason: str = Field(min_length=1, max_length=2000)
-
-    @field_validator("reason")
-    @classmethod
-    def validate_reason(cls, reason: str) -> str:
-        normalized_reason = reason.strip()
-        if not normalized_reason:
-            raise ValueError("A rejection reason is required")
-        return normalized_reason
-
-
 class AuctionApproveRequest(AuctionRejectRequest):
     pass

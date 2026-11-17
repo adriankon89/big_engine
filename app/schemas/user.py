@@ -57,3 +57,11 @@ class UserFilterParams(PaginationParams):
     min_balance: float | None = Field(default=None, ge=0, description="minimal balance")
     search: str | None = Field(default=None, description="Search by email")
     role: Role | None = Field(default=None, description="User role")
+
+
+class UserAuctionFilterParams(PaginationParams):
+    sort_by: UserSortBy = Field(
+        default=UserSortBy.CREATED_AT, description="Sort order field"
+    )
+    order: SortOrder = Field(default=SortOrder.ASC, description="Sort order")
+    search: str | None = Field(default=None, description="Search by email")

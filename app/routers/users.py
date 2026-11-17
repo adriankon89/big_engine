@@ -25,6 +25,7 @@ from app.services.user import UserService
 router = APIRouter()
 
 
+# todo parametry, zwaracam paginację
 @router.get(
     "/my/auctions",
     response_model=list[AuctionRead],
