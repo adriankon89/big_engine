@@ -3,10 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, status
 
 from app.auth.dependencies import get_current_user, require_role
-from app.dependencies import get_user_service
+from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
 from app.infrastructure.rate_limiter import limiter
+from app.models.auction import Auction
 from app.models.user import User
+from app.schemas.auction import AuctionRead
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
     AdminResetPasswordRequest,
@@ -17,9 +19,22 @@ from app.schemas.user import (
     UserStatusUpdate,
     UserUpdate,
 )
+from app.services.auction_service import AuctionService
 from app.services.user import UserService
 
 router = APIRouter()
+
+
+@router.get(
+    "/my/auctions",
+    response_model=list[AuctionRead],
+    status_code=status.HTTP_200_OK,
+)
+def get_my_auctions(
+    current_user: Annotated[User, Depends(get_current_user)],
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+) -> list[Auction]:
+    return auction_service.list_auctions_by_seller(current_user.id)
 
 
 @router.get(

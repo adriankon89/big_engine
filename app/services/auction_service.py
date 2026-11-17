@@ -38,6 +38,9 @@ class AuctionService:
     def list(self) -> list[Auction]:
         return list(self.db.query(Auction).all())
 
+    def list_auctions_by_seller(self, seller_id: int) -> builtins.list[Auction]:
+        return list(self.db.query(Auction).filter(Auction.seller_id == seller_id).all())
+
     def get(self, auction_id: int) -> Auction | None:
         return self.db.get(Auction, auction_id)
 
