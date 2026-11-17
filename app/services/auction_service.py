@@ -42,20 +42,6 @@ class AuctionService:
     def get(self, auction_id: int) -> Auction | None:
         return self.db.get(Auction, auction_id)
 
-    def reject(self, auction_id: int, reason: str, moderator: User) -> Auction | None:
-        auction = self.get(auction_id)
-        if auction is None:
-            return None
-
-        auction.reject(
-            source=RejectionSource.USER,
-            reason=reason,
-            rejected_by_id=moderator.id,
-        )
-        self.db.commit()
-        self.db.refresh(auction)
-        return auction
-
     @staticmethod
     def _build_auction_image(
         auction_id: int,
@@ -167,3 +153,29 @@ class AuctionService:
         return PaginatedResponse[AuctionsForManualReviewResponse].create(
             items=auction_reads, total=total, params=params
         )
+
+    def approve_auction_manual_review(
+        self, auction_id: int, moderator_id: int
+    ) -> Auction | None:
+        auction: Auction | None = self.get(auction_id)
+        if auction is None:
+            return None
+
+        auction.approve_manual_review(moderator_id=moderator_id)
+        self.db.commit()
+        self.db.refresh(auction)
+        return auction
+
+    def reject(self, auction_id: int, reason: str, moderator: User) -> Auction | None:
+        auction = self.get(auction_id)
+        if auction is None:
+            return None
+
+        auction.reject(
+            source=RejectionSource.USER,
+            reason=reason,
+            rejected_by_id=moderator.id,
+        )
+        self.db.commit()
+        self.db.refresh(auction)
+        return auction

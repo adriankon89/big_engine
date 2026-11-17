@@ -2,10 +2,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from app.auth.dependencies import require_role, require_roles
+from app.auth.dependencies import get_current_user, require_role, require_roles
 from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
 from app.models import User
+from app.models.auction import Auction
 from app.schemas.auction import AuctionsForManualReviewResponse
 from app.schemas.moderation import ModeratorAuctionFilterParams, ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
@@ -38,3 +39,13 @@ def auction_manual_review(
     _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 ) -> PaginatedResponse[AuctionsForManualReviewResponse]:
     return auction_service.list_auctions_for_manual_review(params)
+
+
+@router.post("/auctions/{auction_id}/manual-review/approve")
+def approve_auction_manual_review(
+    auction_id: int,
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    _: Annotated[User, Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
+) -> Auction | None:
+    return auction_service.approve_auction_manual_review(auction_id, current_user.id)

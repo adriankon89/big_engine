@@ -102,3 +102,12 @@ class Auction(Base):
     def mark_for_manual_review(self, reason: str) -> None:
         self._verification_status = VerificationStatus.MANUAL_REVIEW
         self.rejection_reason = reason
+
+    def approve_manual_review(self, moderator_id: int) -> None:
+        if self._verification_status == VerificationStatus.REJECTED:
+            self.rejection_reason = None
+            self.rejection_source = None
+            self.rejected_by_id = None
+
+        self._verification_status = VerificationStatus.APPROVED
+        self.moderator_id = moderator_id
