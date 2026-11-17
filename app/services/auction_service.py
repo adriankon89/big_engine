@@ -155,19 +155,24 @@ class AuctionService:
         )
 
     def approve_auction_manual_review(
-        self, auction_id: int, moderator_id: int
+        self, auction_id: int, moderator_id: int, reason: str
     ) -> Auction | None:
         auction: Auction | None = self.get(auction_id)
         if auction is None:
             return None
 
-        auction.approve_manual_review(moderator_id=moderator_id)
+        auction.approve_manual_review(moderator_id=moderator_id, reason=reason)
         self.db.commit()
         self.db.refresh(auction)
         return auction
 
-    def reject(self, auction_id: int, reason: str, moderator: User) -> Auction | None:
-        auction = self.get(auction_id)
+    def reject_auction_manual_review(
+        self,
+        auction_id: int,
+        moderator: User,
+        reason: str,
+    ) -> Auction | None:
+        auction: Auction | None = self.get(auction_id)
         if auction is None:
             return None
 

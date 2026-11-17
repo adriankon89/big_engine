@@ -7,7 +7,12 @@ from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
 from app.models import User
 from app.models.auction import Auction
-from app.schemas.auction import AuctionReviewRead, AuctionsForManualReviewResponse
+from app.schemas.auction import (
+    AuctionApproveRequest,
+    AuctionRejectRequest,
+    AuctionReviewRead,
+    AuctionsForManualReviewResponse,
+)
 from app.schemas.moderation import ModeratorAuctionFilterParams, ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserResponse
@@ -51,16 +56,46 @@ def approve_auction_manual_review(
     auction_id: int,
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     current_user: Annotated[User, Depends(get_current_user)],
+    payload: AuctionApproveRequest,
 ) -> AuctionReviewRead:
     try:
         auction: Auction | None = auction_service.approve_auction_manual_review(
-            auction_id, current_user.id
+            auction_id, current_user.id, payload.reason
         )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc
 
+    if auction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
+        )
+    return AuctionReviewRead.model_validate(auction)
+
+
+@router.post(
+    "/auctions/{auction_id}/manual-review/reject",
+    response_model=AuctionReviewRead,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
+)
+def reject_auction_manual_review(
+    auction_id: int,
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    payload: AuctionRejectRequest,
+) -> AuctionReviewRead:
+    try:
+        auction: Auction | None = auction_service.reject_auction_manual_review(
+            auction_id,
+            current_user,
+            payload.reason,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
     if auction is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
