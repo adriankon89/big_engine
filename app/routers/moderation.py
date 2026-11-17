@@ -89,7 +89,7 @@ def reject_auction_manual_review(
     try:
         auction: Auction | None = auction_service.reject_auction_manual_review(
             auction_id,
-            current_user,
+            current_user.id,
             payload.reason,
         )
     except ValueError as exc:

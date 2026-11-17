@@ -10,7 +10,6 @@ from app.dto import UploadedFileDTO
 from app.enums import RejectionSource, SortOrder, VerificationStatus
 from app.models.auction import Auction
 from app.models.auction_image import AuctionImage
-from app.models.user import User
 from app.schemas.auction import (
     AuctionCreate,
     AuctionImageCreate,
@@ -169,7 +168,7 @@ class AuctionService:
     def reject_auction_manual_review(
         self,
         auction_id: int,
-        moderator: User,
+        moderator_id: int,
         reason: str,
     ) -> Auction | None:
         auction: Auction | None = self.get(auction_id)
@@ -179,7 +178,7 @@ class AuctionService:
         auction.reject(
             source=RejectionSource.USER,
             reason=reason,
-            rejected_by_id=moderator.id,
+            rejected_by_id=moderator_id,
         )
         self.db.commit()
         self.db.refresh(auction)
