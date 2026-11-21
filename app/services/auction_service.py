@@ -14,6 +14,7 @@ from app.schemas.auction import (
     AuctionCreate,
     AuctionImageCreate,
     AuctionsForManualReviewResponse,
+    MyAuctionFilterParams,
 )
 from app.schemas.moderation import ModeratorAuctionFilterParams
 from app.schemas.pagination import PaginatedResponse
@@ -38,8 +39,30 @@ class AuctionService:
     def list(self) -> list[Auction]:
         return list(self.db.query(Auction).all())
 
-    def list_auctions_by_seller(self, seller_id: int) -> builtins.list[Auction]:
-        return list(self.db.query(Auction).filter(Auction.seller_id == seller_id).all())
+    def list_auctions_by_seller(
+        self, params: MyAuctionFilterParams, seller_id: int
+    ) -> builtins.list[Auction]:
+        stmt = select(Auction).where(Auction.seller_id == seller_id)
+
+        if params.status is not None:
+            stmt = stmt.where(Auction._status == params.status)
+        if params.verification_status is not None:
+            stmt = stmt.where(
+                Auction._verification_status == params.verification_status
+            )
+
+        order_func = desc if params.order == SortOrder.DESC else asc
+        sort_column = {
+            AuctionSortBy.ID: Auction.id,
+            AuctionSortBy.TITLE: Auction.title,
+            AuctionSortBy.START_TIME: Auction.starts_at,
+            AuctionSortBy.END_TIME: Auction.ends_at,
+            AuctionSortBy.CREATED_AT: Auction.created_at,
+        }[params.sort_by]
+        stmt = stmt.order_by(order_func(sort_column))
+        stmt = stmt.offset(params.offset).limit(params.page_size)
+
+        return list(self.db.scalars(stmt).all())
 
     def get(self, auction_id: int) -> Auction | None:
         return self.db.get(Auction, auction_id)

@@ -3,8 +3,15 @@ from unittest.mock import MagicMock
 
 from sqlalchemy.dialects import sqlite
 
-from app.enums import AuctionSortBy, RejectionSource, SortOrder
+from app.enums import (
+    AuctionSortBy,
+    AuctionStatus,
+    RejectionSource,
+    SortOrder,
+    VerificationStatus,
+)
 from app.models.auction import Auction
+from app.schemas.auction import MyAuctionFilterParams
 from app.schemas.moderation import ModeratorAuctionFilterParams
 from app.services.auction_service import AuctionService
 
@@ -12,21 +19,51 @@ from app.services.auction_service import AuctionService
 class AuctionServiceTests(unittest.TestCase):
     def test_list_for_seller_filters_by_seller_id(self) -> None:
         seller_id = 7
+        params = MyAuctionFilterParams(
+            page=2,
+            page_size=10,
+            status=AuctionStatus.CLOSED,
+            verification_status=VerificationStatus.REJECTED,
+            sort_by=AuctionSortBy.START_TIME,
+            order=SortOrder.DESC,
+        )
         auctions = [MagicMock(spec=Auction)]
         db = MagicMock()
-        db.query.return_value.filter.return_value.all.return_value = auctions
+        db.scalars.return_value.all.return_value = auctions
         service = AuctionService(
             db=db, storage=MagicMock(), moderator_assignment=MagicMock()
         )
 
-        result = service.list_auctions_by_seller(seller_id)
+        result = service.list_auctions_by_seller(params, seller_id)
 
         self.assertEqual(result, auctions)
-        db.query.assert_called_once_with(Auction)
-        filter_expression = db.query.return_value.filter.call_args.args[0]
-        compiled_filter = filter_expression.compile()
-        self.assertEqual(str(compiled_filter), "auctions.seller_id = :seller_id_1")
-        self.assertEqual(compiled_filter.params["seller_id_1"], seller_id)
+        statement = db.scalars.call_args.args[0]
+        compiled = statement.compile(dialect=sqlite.dialect())
+        sql = str(compiled)
+        self.assertIn("auctions.seller_id =", sql)
+        self.assertIn("auctions.status =", sql)
+        self.assertIn("auctions.verification_status =", sql)
+        self.assertIn("ORDER BY auctions.starts_at DESC", sql)
+        self.assertIn("LIMIT", sql)
+        self.assertIn("OFFSET", sql)
+        self.assertIn(seller_id, compiled.params.values())
+        self.assertIn(params.offset, compiled.params.values())
+        self.assertIn(params.page_size, compiled.params.values())
+
+    def test_list_for_seller_defaults_to_open_status(self) -> None:
+        params = MyAuctionFilterParams()
+        db = MagicMock()
+        db.scalars.return_value.all.return_value = []
+        service = AuctionService(
+            db=db, storage=MagicMock(), moderator_assignment=MagicMock()
+        )
+
+        service.list_auctions_by_seller(params, seller_id=7)
+
+        statement = db.scalars.call_args.args[0]
+        compiled = statement.compile(dialect=sqlite.dialect())
+        self.assertIn("auctions.status =", str(compiled))
+        self.assertIn(AuctionStatus.OPEN, compiled.params.values())
 
     def test_manual_review_filters_and_sort_mapping(self) -> None:
         params = ModeratorAuctionFilterParams(

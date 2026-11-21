@@ -36,7 +36,7 @@ def get_my_auctions(
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     params: MyAuctionFilterParams,
 ) -> list[Auction]:
-    return auction_service.list_auctions_by_seller(current_user.id)
+    return auction_service.list_auctions_by_seller(params, current_user.id)
 
 
 @router.get(
