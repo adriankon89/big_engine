@@ -36,3 +36,6 @@ class ModeratorAuctionFilterParams(PaginationParams):
     moderator_id: int | None = Field(
         default=None, description="Filter by moderator who reviewed the auction"
     )
+    show_mine: bool = Field(
+        default=False, description="Show auctions assigned to the current moderator"
+    )

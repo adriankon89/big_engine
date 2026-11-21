@@ -130,7 +130,9 @@ class AuctionService:
 
         return auction
 
-    def list_auctions_for_manual_review(self, params: ModeratorAuctionFilterParams):
+    def list_auctions_for_manual_review(
+        self, params: ModeratorAuctionFilterParams, current_moderator_id: int
+    ):
         stmt = select(Auction)
         stmt = stmt.where(
             Auction._verification_status == VerificationStatus.MANUAL_REVIEW
@@ -144,6 +146,8 @@ class AuctionService:
             stmt = stmt.where(Auction.rejected_by_id == params.rejected_by_id)
         if params.moderator_id is not None:
             stmt = stmt.where(Auction.moderator_id == params.moderator_id)
+        if params.show_mine:
+            stmt = stmt.where(Auction.moderator_id == current_moderator_id)
 
         order_func = desc if params.order == SortOrder.DESC else asc
         sort_column = {

@@ -42,8 +42,9 @@ def list_moderators(
 def auction_manual_review(
     params: Annotated[ModeratorAuctionFilterParams, Depends()],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> PaginatedResponse[AuctionsForManualReviewResponse]:
-    return auction_service.list_auctions_for_manual_review(params)
+    return auction_service.list_auctions_for_manual_review(params, current_user.id)
 
 
 @router.post(

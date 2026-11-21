@@ -44,7 +44,7 @@ class AuctionServiceTests(unittest.TestCase):
             db=db, storage=MagicMock(), moderator_assignment=MagicMock()
         )
 
-        service.list_auctions_for_manual_review(params)
+        service.list_auctions_for_manual_review(params, current_moderator_id=12)
 
         statement = db.scalars.call_args.args[0]
         sql = str(statement.compile(dialect=sqlite.dialect()))
@@ -54,6 +54,23 @@ class AuctionServiceTests(unittest.TestCase):
         self.assertIn("auctions.rejected_by_id =", sql)
         self.assertIn("auctions.moderator_id =", sql)
         self.assertIn("ORDER BY auctions.starts_at DESC", sql)
+
+    def test_manual_review_show_mine_filters_by_current_moderator(self) -> None:
+        current_moderator_id = 17
+        params = ModeratorAuctionFilterParams(show_mine=True)
+        db = MagicMock()
+        db.scalar.return_value = 0
+        db.scalars.return_value.all.return_value = []
+        service = AuctionService(
+            db=db, storage=MagicMock(), moderator_assignment=MagicMock()
+        )
+
+        service.list_auctions_for_manual_review(params, current_moderator_id)
+
+        statement = db.scalars.call_args.args[0]
+        compiled = statement.compile(dialect=sqlite.dialect())
+        self.assertIn("auctions.moderator_id =", str(compiled))
+        self.assertIn(current_moderator_id, compiled.params.values())
 
     def test_manual_review_sort_by_maps_to_auction_columns(self) -> None:
         expected_columns = {
@@ -74,7 +91,8 @@ class AuctionServiceTests(unittest.TestCase):
                 )
 
                 service.list_auctions_for_manual_review(
-                    ModeratorAuctionFilterParams(sort_by=sort_by)
+                    ModeratorAuctionFilterParams(sort_by=sort_by),
+                    current_moderator_id=1,
                 )
 
                 statement = db.scalars.call_args.args[0]
