@@ -71,3 +71,19 @@ class RejectionSource(str, Enum):
 class ModeratorAssignmentStrategy(str, Enum):
     ROUND_ROBIN = "round_robin"
     LEAST_ASSIGNED = "least_assigned"
+
+
+class AppealStatus(str, Enum):
+    OPEN = "open"
+    UNDER_REVIEW = "under_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+
+class AppealReasonCode(str, Enum):
+    INCORRECT_DETAILS = "incorrect_details"
+    POLICY_VIOLATION = "policy_violation"
+    DUPLICATE_AUCTION = "duplicate_auction"
+    FRAUD_SUSPECTED = "fraud_suspected"
+    OTHER = "other"
