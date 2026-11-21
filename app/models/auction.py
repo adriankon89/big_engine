@@ -33,6 +33,7 @@ class Auction(Base):
     current_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
     bid_increment: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
     _status: Mapped[AuctionStatus] = mapped_column(
+        "status",
         SQLEnum(AuctionStatus),
         default=AuctionStatus.DRAFT,
         nullable=False,

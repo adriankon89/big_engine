@@ -7,7 +7,7 @@ from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from app.dto import UploadedFileDTO
-from app.enums import RejectionSource, SortOrder, VerificationStatus
+from app.enums import AuctionSortBy, RejectionSource, SortOrder, VerificationStatus
 from app.models.auction import Auction
 from app.models.auction_image import AuctionImage
 from app.schemas.auction import (
@@ -136,10 +136,24 @@ class AuctionService:
             Auction._verification_status == VerificationStatus.MANUAL_REVIEW
         )
 
-        order_func = desc if params.order == SortOrder.DESC else asc
+        if params.reject_reason is not None:
+            stmt = stmt.where(Auction.rejection_reason == params.reject_reason)
+        if params.reject_source is not None:
+            stmt = stmt.where(Auction.rejection_source == params.reject_source)
+        if params.rejected_by_id is not None:
+            stmt = stmt.where(Auction.rejected_by_id == params.rejected_by_id)
+        if params.moderator_id is not None:
+            stmt = stmt.where(Auction.moderator_id == params.moderator_id)
 
-        # todo  status: UserStatus | None = Field(default=None, description="Filter by status") only active users
-        stmt = stmt.order_by(order_func(Auction.created_at))
+        order_func = desc if params.order == SortOrder.DESC else asc
+        sort_column = {
+            AuctionSortBy.ID: Auction.id,
+            AuctionSortBy.TITLE: Auction.title,
+            AuctionSortBy.START_TIME: Auction.starts_at,
+            AuctionSortBy.END_TIME: Auction.ends_at,
+            AuctionSortBy.CREATED_AT: Auction.created_at,
+        }[params.sort_by]
+        stmt = stmt.order_by(order_func(sort_column))
 
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = self.db.scalar(count_stmt) or 0

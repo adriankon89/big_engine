@@ -1,7 +1,11 @@
 import unittest
 from unittest.mock import MagicMock
 
+from sqlalchemy.dialects import sqlite
+
+from app.enums import AuctionSortBy, RejectionSource, SortOrder
 from app.models.auction import Auction
+from app.schemas.moderation import ModeratorAuctionFilterParams
 from app.services.auction_service import AuctionService
 
 
@@ -23,6 +27,59 @@ class AuctionServiceTests(unittest.TestCase):
         compiled_filter = filter_expression.compile()
         self.assertEqual(str(compiled_filter), "auctions.seller_id = :seller_id_1")
         self.assertEqual(compiled_filter.params["seller_id_1"], seller_id)
+
+    def test_manual_review_filters_and_sort_mapping(self) -> None:
+        params = ModeratorAuctionFilterParams(
+            sort_by=AuctionSortBy.START_TIME,
+            order=SortOrder.DESC,
+            reject_reason="policy concern",
+            reject_source=RejectionSource.AI,
+            rejected_by_id=11,
+            moderator_id=12,
+        )
+        db = MagicMock()
+        db.scalar.return_value = 0
+        db.scalars.return_value.all.return_value = []
+        service = AuctionService(
+            db=db, storage=MagicMock(), moderator_assignment=MagicMock()
+        )
+
+        service.list_auctions_for_manual_review(params)
+
+        statement = db.scalars.call_args.args[0]
+        sql = str(statement.compile(dialect=sqlite.dialect()))
+        self.assertIn("auctions.verification_status =", sql)
+        self.assertIn("auctions.rejection_reason =", sql)
+        self.assertIn("auctions.rejection_source =", sql)
+        self.assertIn("auctions.rejected_by_id =", sql)
+        self.assertIn("auctions.moderator_id =", sql)
+        self.assertIn("ORDER BY auctions.starts_at DESC", sql)
+
+    def test_manual_review_sort_by_maps_to_auction_columns(self) -> None:
+        expected_columns = {
+            AuctionSortBy.ID: "id",
+            AuctionSortBy.TITLE: "title",
+            AuctionSortBy.START_TIME: "starts_at",
+            AuctionSortBy.END_TIME: "ends_at",
+            AuctionSortBy.CREATED_AT: "created_at",
+        }
+
+        for sort_by, column in expected_columns.items():
+            with self.subTest(sort_by=sort_by):
+                db = MagicMock()
+                db.scalar.return_value = 0
+                db.scalars.return_value.all.return_value = []
+                service = AuctionService(
+                    db=db, storage=MagicMock(), moderator_assignment=MagicMock()
+                )
+
+                service.list_auctions_for_manual_review(
+                    ModeratorAuctionFilterParams(sort_by=sort_by)
+                )
+
+                statement = db.scalars.call_args.args[0]
+                sql = str(statement.compile(dialect=sqlite.dialect()))
+                self.assertIn(f"ORDER BY auctions.{column} ASC", sql)
 
 
 if __name__ == "__main__":
