@@ -6,9 +6,11 @@ from app.auth.dependencies import get_current_user, require_role
 from app.dependencies import get_auction_service, get_user_service
 from app.enums import Role
 from app.infrastructure.rate_limiter import limiter
-from app.models.auction import Auction
 from app.models.user import User
-from app.schemas.auction import AuctionRead, MyAuctionFilterParams
+from app.schemas.auction import (
+    AuctionRead,
+    MyAuctionFilterParams,
+)
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
     AdminResetPasswordRequest,
@@ -25,7 +27,6 @@ from app.services.user import UserService
 router = APIRouter()
 
 
-# todo parametry, zwaracam paginację
 @router.get(
     "/my/auctions",
     response_model=list[AuctionRead],
@@ -35,7 +36,7 @@ def get_my_auctions(
     current_user: Annotated[User, Depends(get_current_user)],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     params: MyAuctionFilterParams,
-) -> list[Auction]:
+) -> PaginatedResponse[AuctionRead]:
     return auction_service.list_auctions_by_seller(params, current_user.id)
 
 

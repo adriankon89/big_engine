@@ -13,6 +13,7 @@ from app.models.auction_image import AuctionImage
 from app.schemas.auction import (
     AuctionCreate,
     AuctionImageCreate,
+    AuctionRead,
     AuctionsForManualReviewResponse,
     MyAuctionFilterParams,
 )
@@ -41,7 +42,7 @@ class AuctionService:
 
     def list_auctions_by_seller(
         self, params: MyAuctionFilterParams, seller_id: int
-    ) -> builtins.list[Auction]:
+    ) -> PaginatedResponse[AuctionRead]:
         stmt = select(Auction).where(Auction.seller_id == seller_id)
 
         if params.status is not None:
@@ -60,9 +61,20 @@ class AuctionService:
             AuctionSortBy.CREATED_AT: Auction.created_at,
         }[params.sort_by]
         stmt = stmt.order_by(order_func(sort_column))
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.scalar(count_stmt) or 0
+
         stmt = stmt.offset(params.offset).limit(params.page_size)
 
-        return list(self.db.scalars(stmt).all())
+        auctions: list[Auction] = list(self.db.scalars(stmt).all())
+        auction_reads: builtins.list[AuctionRead] = [
+            AuctionRead.model_validate(auction) for auction in auctions
+        ]
+
+        return PaginatedResponse[AuctionRead].create(
+            items=auction_reads, total=total, params=params
+        )
 
     def get(self, auction_id: int) -> Auction | None:
         return self.db.get(Auction, auction_id)
@@ -155,7 +167,7 @@ class AuctionService:
 
     def list_auctions_for_manual_review(
         self, params: ModeratorAuctionFilterParams, current_moderator_id: int
-    ):
+    ) -> PaginatedResponse[AuctionsForManualReviewResponse]:
         stmt = select(Auction)
         stmt = stmt.where(
             Auction._verification_status == VerificationStatus.MANUAL_REVIEW
