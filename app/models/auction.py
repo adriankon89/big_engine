@@ -16,6 +16,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.enums import AuctionStatus, RejectionSource, VerificationStatus
+from app.models.auction_appeal import AuctionAppeal
 from app.models.base import Base
 
 
@@ -73,6 +74,11 @@ class Auction(Base):
     )
 
     images: Mapped[list["AuctionImage"]] = relationship(back_populates="auction")
+    appeal: Mapped["AuctionAppeal | None"] = relationship(
+        back_populates="auction",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     @property
     def status(self) -> AuctionStatus:

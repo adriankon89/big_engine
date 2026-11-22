@@ -2,9 +2,10 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.enums import AppealReasonCode, AppealStatus
+from app.models.auction import Auction
 from app.models.base import BaseWithTimestamps
 
 
@@ -43,3 +44,5 @@ class AuctionAppeal(BaseWithTimestamps):
     resolved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    auction: Mapped["Auction"] = relationship(back_populates="appeal")
