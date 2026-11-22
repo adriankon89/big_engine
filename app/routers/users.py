@@ -24,11 +24,11 @@ from app.schemas.user import (
 from app.services.auction_service import AuctionService
 from app.services.user import UserService
 
-router = APIRouter()
+router = APIRouter(prefix="/users")
 
 
 @router.get(
-    "/my/auctions",
+    "/me/auctions",
     response_model=PaginatedResponse[AuctionRead],
     status_code=status.HTTP_200_OK,
 )
@@ -41,7 +41,7 @@ def get_my_auctions(
 
 
 @router.get(
-    "/users",
+    "",
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_role(Role.ADMIN))],
 )
@@ -52,7 +52,7 @@ def list_users(
     return user_service.list_users(params)
 
 
-@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/hour")
 def create_user(
     request: Request,
@@ -62,9 +62,7 @@ def create_user(
     return user_service.create_user(payload)
 
 
-@router.patch(
-    "/users/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK
-)
+@router.patch("/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
 @limiter.limit("30/minute")
 def update_user(
     request: Request,
@@ -76,7 +74,7 @@ def update_user(
     return user_service.update_user(user_id, payload, current_user=current_user)
 
 
-@router.post("/users/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/hour")
 def change_password(
     request: Request,
@@ -91,7 +89,7 @@ def change_password(
     )
 
 
-@router.post("/users/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/hour")
 def admin_reset_password(
     request: Request,
@@ -106,7 +104,7 @@ def admin_reset_password(
 
 
 @router.post(
-    "/users/{user_id}/status",
+    "/{user_id}/status",
     status_code=status.HTTP_200_OK,
     dependencies=[Depends(require_role(Role.ADMIN))],
 )
