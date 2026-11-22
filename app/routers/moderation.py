@@ -17,7 +17,11 @@ from app.schemas.auction import (
     AuctionReviewRead,
     AuctionsForManualReviewResponse,
 )
-from app.schemas.auction_appeal import AuctionAppealRead, AuctionAppealRequest
+from app.schemas.auction_appeal import (
+    AuctionAppealRead,
+    AuctionAppealRequest,
+    AuctionAppealReviewRequest,
+)
 from app.schemas.moderation import ModeratorAuctionFilterParams, ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserResponse
@@ -124,3 +128,26 @@ def get_auction_appeals(
     ],
 ) -> PaginatedResponse[AuctionAppealRead]:
     return appeal_service.list(params)
+
+
+@router.patch(
+    "/auctions/appeals/{appeal_id}",
+    response_model=AuctionAppealRead,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
+)
+def update_auction_appeal_review(
+    appeal_id: int,
+    payload: AuctionAppealReviewRequest,
+    appeal_service: Annotated[
+        AuctionAppealService,
+        Depends(get_auction_appeal_service),
+    ],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> AuctionAppealRead:
+    appeal = appeal_service.save_moderator_action(appeal_id, current_user.id, payload)
+    if appeal is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Appeal not found"
+        )
+    return AuctionAppealRead.model_validate(appeal)

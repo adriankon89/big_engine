@@ -1,11 +1,17 @@
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.enums import Role
+from app.enums import AppealStatus, Role
 from app.models.auction import Auction
 from app.models.auction_appeal import AuctionAppeal
 from app.schemas.auction import CreateAuctionAppealRequest
-from app.schemas.auction_appeal import AuctionAppealRead, AuctionAppealRequest
+from app.schemas.auction_appeal import (
+    AuctionAppealRead,
+    AuctionAppealRequest,
+    AuctionAppealReviewRequest,
+)
 from app.schemas.pagination import PaginatedResponse
 from app.services.pagination import paginate
 
@@ -60,4 +66,27 @@ class AuctionAppealService:
         self.db.commit()
         self.db.refresh(appeal)
 
+        return appeal
+
+    def save_moderator_action(
+        self,
+        appeal_id: int,
+        reviewer_id: int,
+        payload: AuctionAppealReviewRequest,
+    ) -> AuctionAppeal | None:
+        appeal = self.db.get(AuctionAppeal, appeal_id)
+        if appeal is None:
+            return None
+
+        appeal.status = payload.status
+        appeal.reviewer_id = reviewer_id
+        appeal.resolution_note = payload.resolution_note
+        appeal.internal_notes = payload.internal_notes
+        appeal.resolved_at = (
+            datetime.now(timezone(timedelta(0)))
+            if payload.status in (AppealStatus.APPROVED, AppealStatus.REJECTED)
+            else None
+        )
+        self.db.commit()
+        self.db.refresh(appeal)
         return appeal

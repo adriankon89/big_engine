@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.enums import AppealReasonCode, AppealStatus
 from app.schemas.pagination import PaginationParams
@@ -24,6 +25,18 @@ class AuctionAppealRead(BaseModel):
 
 class AuctionAppealRequest(PaginationParams):
     auction_id: int | None = None
-    status: AppealStatus | None = None
+    status: AppealStatus | None = Field(
+        default=AppealStatus.OPEN, description="Filter by status"
+    )
     reason_code: AppealReasonCode | None = None
     reviewer_id: int | None = None
+
+
+class AuctionAppealReviewRequest(BaseModel):
+    status: Literal[
+        AppealStatus.UNDER_REVIEW,
+        AppealStatus.APPROVED,
+        AppealStatus.REJECTED,
+    ]
+    resolution_note: str | None = Field(default=None, max_length=2000)
+    internal_notes: str | None = Field(default=None, max_length=2000)
