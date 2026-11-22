@@ -1,6 +1,6 @@
 # app/services/user_service.py
 
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import (
@@ -22,6 +22,7 @@ from app.schemas.user import (
     UserResponse,
     UserUpdate,
 )
+from app.services.pagination import paginate
 
 
 class UserService:
@@ -46,9 +47,6 @@ class UserService:
             search_pattern = f"%{params.search}"
             stmt = stmt.where(User.email.ilike(search_pattern))
 
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total = self.db.scalar(count_stmt) or 0
-
         sort_column_map = {
             UserSortBy.ID: User.id,
             UserSortBy.EMAIL: User.email,
@@ -60,15 +58,7 @@ class UserService:
         order_func = desc if params.order == SortOrder.DESC else asc
 
         stmt = stmt.order_by(order_func(target_column))
-
-        stmt.offset(params.offset).limit(params.page_size)
-
-        users: list[User] = list(self.db.scalars(stmt).all())
-        user_reads = [UserResponse.model_validate(user) for user in users]
-
-        return PaginatedResponse[UserResponse].create(
-            items=user_reads, total=total, params=params
-        )
+        return paginate(self.db, stmt, params, UserResponse)
 
     def list_moderators(
         self, params: ModeratorFilterParams
@@ -81,9 +71,6 @@ class UserService:
         if params.search:
             stmt = stmt.where(User.email.ilike(f"%{params.search}%"))
 
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total = self.db.scalar(count_stmt) or 0
-
         sort_column_map = {
             ModeratorSortBy.ID: User.id,
             ModeratorSortBy.EMAIL: User.email,
@@ -92,13 +79,7 @@ class UserService:
         target_column = sort_column_map[params.sort_by]
         order_func = desc if params.order == SortOrder.DESC else asc
         stmt = stmt.order_by(order_func(target_column))
-        stmt = stmt.offset(params.offset).limit(params.page_size)
-
-        moderators = list(self.db.scalars(stmt).all())
-        items = [UserResponse.model_validate(moderator) for moderator in moderators]
-        return PaginatedResponse[UserResponse].create(
-            items=items, total=total, params=params
-        )
+        return paginate(self.db, stmt, params, UserResponse)
 
     def create_user(self, payload: UserCreate) -> User:
         existing_user: User | None = self.get_by_email(payload.email)

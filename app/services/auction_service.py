@@ -3,7 +3,7 @@ import logging
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.dto import UploadedFileDTO
@@ -26,6 +26,7 @@ from app.schemas.moderation import ModeratorAuctionFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.services.file_storage import FileStorage
 from app.services.moderator_assignment_service import ModeratorAssignmentService
+from app.services.pagination import paginate
 from app.tasks.auction_validation import auction_validation
 
 logger = logging.getLogger(__name__)
@@ -70,20 +71,7 @@ class AuctionService:
             AuctionSortBy.CREATED_AT: Auction.created_at,
         }[params.sort_by]
         stmt = stmt.order_by(order_func(sort_column))
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total = self.db.scalar(count_stmt) or 0
-
-        stmt = stmt.offset(params.offset).limit(params.page_size)
-
-        auctions: list[Auction] = list(self.db.scalars(stmt).all())
-        auction_reads: builtins.list[MyAuctionRead] = [
-            MyAuctionRead.model_validate(auction) for auction in auctions
-        ]
-
-        return PaginatedResponse[MyAuctionRead].create(
-            items=auction_reads, total=total, params=params
-        )
+        return paginate(self.db, stmt, params, MyAuctionRead)
 
     def get(self, auction_id: int) -> Auction | None:
         return self.db.get(Auction, auction_id)
@@ -202,21 +190,7 @@ class AuctionService:
             AuctionSortBy.CREATED_AT: Auction.created_at,
         }[params.sort_by]
         stmt = stmt.order_by(order_func(sort_column))
-
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total = self.db.scalar(count_stmt) or 0
-
-        stmt = stmt.offset(params.offset).limit(params.page_size)
-
-        auctions: list[Auction] = list(self.db.scalars(stmt).all())
-        auction_reads = [
-            AuctionsForManualReviewResponse.model_validate(auction)
-            for auction in auctions
-        ]
-
-        return PaginatedResponse[AuctionsForManualReviewResponse].create(
-            items=auction_reads, total=total, params=params
-        )
+        return paginate(self.db, stmt, params, AuctionsForManualReviewResponse)
 
     def approve_auction_manual_review(
         self, auction_id: int, moderator_id: int, reason: str

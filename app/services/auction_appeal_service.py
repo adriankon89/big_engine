@@ -1,4 +1,4 @@
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.enums import Role
@@ -7,6 +7,7 @@ from app.models.auction_appeal import AuctionAppeal
 from app.schemas.auction import CreateAuctionAppealRequest
 from app.schemas.auction_appeal import AuctionAppealRead, AuctionAppealRequest
 from app.schemas.pagination import PaginatedResponse
+from app.services.pagination import paginate
 
 
 class AuctionAppealService:
@@ -27,20 +28,8 @@ class AuctionAppealService:
         if params.reviewer_id is not None:
             stmt = stmt.where(AuctionAppeal.reviewer_id == params.reviewer_id)
 
-        count_stmt = select(func.count()).select_from(stmt.subquery())
-        total = self.db.scalar(count_stmt) or 0
-
         stmt = stmt.order_by(desc(AuctionAppeal.created_at))
-        stmt = stmt.offset(params.offset).limit(params.page_size)
-
-        appeals = list(self.db.scalars(stmt).all())
-        items = [AuctionAppealRead.model_validate(appeal) for appeal in appeals]
-
-        return PaginatedResponse[AuctionAppealRead].create(
-            items=items,
-            total=total,
-            params=params,
-        )
+        return paginate(self.db, stmt, params, AuctionAppealRead)
 
     def create(
         self,
