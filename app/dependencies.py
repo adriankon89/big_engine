@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.core.security import PasswordHasher
 from app.database import get_db
 from app.enums import ModeratorAssignmentStrategy
+from app.services.auction_appeal_service import AuctionAppealService
 from app.services.auction_service import AuctionService
 from app.services.auth import AuthService
 from app.services.file_storage import LocalFileStorage
@@ -39,3 +40,9 @@ def get_auth_service(
 
 def get_wallet_service(db: Annotated[Session, Depends(get_db)]) -> WalletService:
     return WalletService(db=db)
+
+
+def get_auction_appeal_service(
+    db: Annotated[Session, Depends(get_db)],
+) -> AuctionAppealService:
+    return AuctionAppealService(db=db)

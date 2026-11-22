@@ -3,7 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import get_current_user, require_role, require_roles
-from app.dependencies import get_auction_service, get_user_service
+from app.dependencies import (
+    get_auction_appeal_service,
+    get_auction_service,
+    get_user_service,
+)
 from app.enums import Role
 from app.models import User
 from app.models.auction import Auction
@@ -13,9 +17,11 @@ from app.schemas.auction import (
     AuctionReviewRead,
     AuctionsForManualReviewResponse,
 )
+from app.schemas.auction_appeal import AuctionAppealRead, AuctionAppealRequest
 from app.schemas.moderation import ModeratorAuctionFilterParams, ModeratorFilterParams
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserResponse
+from app.services.auction_appeal_service import AuctionAppealService
 from app.services.auction_service import AuctionService
 from app.services.user import UserService
 
@@ -105,5 +111,16 @@ def reject_auction_manual_review(
 
 
 @router.get(
-    "auctions/appeals"
+    "/auctions/appeals",
+    response_model=PaginatedResponse[AuctionAppealRead],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_roles(Role.ADMIN, Role.MODERATOR))],
 )
+def get_auction_appeals(
+    params: Annotated[AuctionAppealRequest, Depends()],
+    appeal_service: Annotated[
+        AuctionAppealService,
+        Depends(get_auction_appeal_service),
+    ],
+) -> PaginatedResponse[AuctionAppealRead]:
+    return appeal_service.list(params)

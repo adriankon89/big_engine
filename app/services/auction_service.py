@@ -10,18 +10,15 @@ from app.dto import UploadedFileDTO
 from app.enums import (
     AuctionSortBy,
     RejectionSource,
-    Role,
     SortOrder,
     VerificationStatus,
 )
 from app.models.auction import Auction
-from app.models.auction_appeal import AuctionAppeal
 from app.models.auction_image import AuctionImage
 from app.schemas.auction import (
     AuctionCreate,
     AuctionImageCreate,
     AuctionsForManualReviewResponse,
-    CreateAuctionAppealRequest,
     MyAuctionFilterParams,
     MyAuctionRead,
 )
@@ -251,34 +248,3 @@ class AuctionService:
         self.db.commit()
         self.db.refresh(auction)
         return auction
-
-    def create_auction_appeal(
-        self,
-        payload: "CreateAuctionAppealRequest",
-        actor_id: int,
-        actor_role: Role | str,
-    ) -> AuctionAppeal:
-        auction = self.db.get(Auction, payload.auction_id)
-        if auction is None:
-            raise ValueError("Auction not found")
-
-        privileged_roles = (Role.ADMIN, Role.MODERATOR)
-        is_privileged = actor_role in privileged_roles or actor_role in (
-            Role.ADMIN.value,
-            Role.MODERATOR.value,
-        )
-        if auction.seller_id != actor_id and not is_privileged:
-            raise ValueError("You are not the seller of this auction")
-        if not auction.allow_appeal:
-            raise ValueError("This auction is not eligible for appeal")
-
-        appeal = AuctionAppeal(
-            auction_id=auction.id,
-            reason_code=payload.reason_code,
-            reason=payload.reason,
-        )
-        self.db.add(appeal)
-        self.db.commit()
-        self.db.refresh(appeal)
-
-        return appeal

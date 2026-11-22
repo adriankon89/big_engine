@@ -3,7 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, status
 
 from app.auth.dependencies import get_current_user, require_role
-from app.dependencies import get_auction_service, get_user_service
+from app.dependencies import (
+    get_auction_appeal_service,
+    get_auction_service,
+    get_user_service,
+)
 from app.enums import Role
 from app.infrastructure.rate_limiter import limiter
 from app.models.user import User
@@ -22,6 +26,7 @@ from app.schemas.user import (
     UserStatusUpdate,
     UserUpdate,
 )
+from app.services.auction_appeal_service import AuctionAppealService
 from app.services.auction_service import AuctionService
 from app.services.user import UserService
 
@@ -47,10 +52,13 @@ def get_my_auctions(
 )
 def create_auction_appeal(
     current_user: Annotated[User, Depends(get_current_user)],
-    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    appeal_service: Annotated[
+        AuctionAppealService,
+        Depends(get_auction_appeal_service),
+    ],
     payload: CreateAuctionAppealRequest,
 ) -> None:
-    auction_service.create_auction_appeal(payload, current_user.id, current_user.role)
+    appeal_service.create(payload, current_user.id, current_user.role)
 
 
 @router.get(
