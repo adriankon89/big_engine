@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta, timezone
-
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -86,9 +84,6 @@ class AuctionAppealService:
             appeal.resolution_note = payload.resolution_note
         if "internal_notes" in payload.model_fields_set:
             appeal.internal_notes = payload.internal_notes
-        appeal.resolved_at = (
-            datetime.now(timezone(timedelta(0))) if appeal.is_resolved else None
-        )
         self.db.commit()
         self.db.refresh(appeal)
         return appeal

@@ -51,9 +51,12 @@ class AuctionAppealServiceTests(unittest.TestCase):
         db.commit.assert_not_called()
 
     def test_review_preserves_omitted_fields_and_clears_explicit_null(self) -> None:
-        appeal = MagicMock()
-        appeal.is_resolved = False
-        appeal.status = AppealStatus.UNDER_REVIEW
+        appeal = AuctionAppeal(
+            auction_id=4,
+            reason="Incorrect decision",
+            reason_code=AppealReasonCode.OTHER,
+            status=AppealStatus.UNDER_REVIEW,
+        )
         appeal.resolution_note = "Existing resolution"
         appeal.internal_notes = "Existing internal note"
         db = MagicMock()
@@ -95,6 +98,21 @@ class AuctionAppealServiceTests(unittest.TestCase):
         self.assertEqual(appeal.status, AppealStatus.CANCELLED)
         self.assertIsNotNone(appeal.resolved_at)
         self.assertIsNotNone(appeal.resolved_at.tzinfo)
+
+    def test_status_assignment_clears_timestamp_when_not_resolved(self) -> None:
+        appeal = AuctionAppeal(
+            auction_id=4,
+            reason="Incorrect decision",
+            reason_code=AppealReasonCode.OTHER,
+            status=AppealStatus.OPEN,
+        )
+
+        appeal.status = AppealStatus.APPROVED
+        self.assertIsNotNone(appeal.resolved_at)
+
+        appeal.status = AppealStatus.UNDER_REVIEW
+
+        self.assertIsNone(appeal.resolved_at)
 
     def test_review_raises_for_missing_appeal(self) -> None:
         db = MagicMock()

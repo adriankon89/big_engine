@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.enums import AppealReasonCode, AppealStatus
 from app.models.auction import Auction
@@ -47,10 +47,23 @@ class AuctionAppeal(BaseWithTimestamps):
 
     auction: Mapped["Auction"] = relationship(back_populates="appeal")
 
-    @property
-    def is_resolved(self) -> bool:
-        return self.status in (
+    @validates("status")
+    def _set_resolved_at_for_status(
+        self, _key: str, status: AppealStatus
+    ) -> AppealStatus:
+        self.resolved_at = (
+            datetime.now(UTC) if self._status_is_resolved(status) else None
+        )
+        return status
+
+    @staticmethod
+    def _status_is_resolved(status: AppealStatus) -> bool:
+        return status in (
             AppealStatus.APPROVED,
             AppealStatus.REJECTED,
             AppealStatus.CANCELLED,
         )
+
+    @property
+    def is_resolved(self) -> bool:
+        return self._status_is_resolved(self.status)
