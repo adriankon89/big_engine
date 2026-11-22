@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import get_current_user, require_role, require_roles
+from app.core.exceptions import AppealAlreadyClosedError
 from app.dependencies import (
     get_auction_appeal_service,
     get_auction_service,
@@ -149,7 +150,7 @@ def update_auction_appeal_review(
         appeal = appeal_service.save_moderator_action(
             appeal_id, current_user.id, payload
         )
-    except ValueError as exc:
+    except AppealAlreadyClosedError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc

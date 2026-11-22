@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import AppealAlreadyClosedError
 from app.enums import AppealStatus, Role
 from app.models.auction import Auction
 from app.models.auction_appeal import AuctionAppeal
@@ -79,7 +80,7 @@ class AuctionAppealService:
             return None
 
         if appeal.is_resolved:
-            raise ValueError("Appeal is already closed")
+            raise AppealAlreadyClosedError("Appeal is already closed")
 
         appeal.status = payload.status
         appeal.reviewer_id = reviewer_id

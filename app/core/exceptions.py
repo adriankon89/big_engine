@@ -28,6 +28,10 @@ class BadRequestException(Exception):
         super().__init__(self.message)
 
 
+class AppealAlreadyClosedError(Exception):
+    pass
+
+
 class UploadValidationError(BadRequestException):
     pass
 
