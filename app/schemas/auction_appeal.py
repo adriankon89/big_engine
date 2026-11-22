@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -33,10 +32,6 @@ class AuctionAppealRequest(PaginationParams):
 
 
 class AuctionAppealReviewRequest(BaseModel):
-    status: Literal[
-        AppealStatus.UNDER_REVIEW,
-        AppealStatus.APPROVED,
-        AppealStatus.REJECTED,
-    ]
+    status: AppealStatus = Field(default=AppealStatus.OPEN, description="Appeal status")
     resolution_note: str | None = Field(default=None, max_length=2000)
     internal_notes: str | None = Field(default=None, max_length=2000)
