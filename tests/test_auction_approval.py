@@ -1,9 +1,12 @@
 import unittest
-from datetime import UTC, datetime
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
-from app.enums import AuctionStatus, VerificationStatus
+from app.enums import AppealReasonCode, AuctionStatus, VerificationStatus
 from app.models.auction import Auction
+from app.models.auction_appeal import AuctionAppeal
+
+UTC = timezone.utc
 
 
 class AuctionApprovalTests(unittest.TestCase):
@@ -31,6 +34,65 @@ class AuctionApprovalTests(unittest.TestCase):
 
         self.assertEqual(auction.verification_status, VerificationStatus.APPROVED)
         self.assertEqual(auction.moderator_id, 12)
+
+    @staticmethod
+    def _auction(verification_status: VerificationStatus) -> Auction:
+        now = datetime.now(UTC)
+        return Auction(
+            seller_id=1,
+            title="Test auction",
+            description="Test description",
+            starting_price=Decimal("1.00"),
+            minimum_price=Decimal("1.00"),
+            starts_at=now,
+            ends_at=now,
+            _status=AuctionStatus.DRAFT,
+            _verification_status=verification_status,
+        )
+
+
+class AuctionAppealTests(unittest.TestCase):
+    def test_appeal_eligibility(self):
+        auction = Auction(
+            seller_id=1,
+            title="Test auction",
+            description="Test description",
+            starting_price=Decimal("1.00"),
+            minimum_price=Decimal("1.00"),
+            starts_at=datetime.now(UTC),
+            ends_at=datetime.now(UTC),
+            _status=AuctionStatus.DRAFT,
+            _verification_status=VerificationStatus.REJECTED,
+        )
+        auction.created_at = datetime.now(UTC)
+        self.assertTrue(auction.allow_appeal)
+
+        auction._verification_status = VerificationStatus.APPROVED
+        self.assertTrue(auction.allow_appeal)
+
+    def test_appeal_reason_code(self):
+        appeal = AuctionAppeal(auction_id=1, reason_code=AppealReasonCode.OTHER)
+        self.assertEqual(appeal.reason_code, AppealReasonCode.OTHER)
+
+    def test_auction_allows_appeal_within_30_days_without_appeal(self) -> None:
+        auction = self._auction(VerificationStatus.REJECTED)
+        auction.created_at = datetime.now(UTC) - timedelta(days=29)
+
+        self.assertTrue(auction.allow_appeal)
+
+    def test_auction_rejects_appeal_at_30_days_or_with_existing_appeal(self) -> None:
+        auction = self._auction(VerificationStatus.REJECTED)
+        auction.created_at = datetime.now(UTC) - timedelta(days=30)
+
+        self.assertFalse(auction.allow_appeal)
+
+        auction.created_at = datetime.now(UTC)
+        auction.appeal = AuctionAppeal(
+            reason="Incorrect rejection",
+            reason_code=AppealReasonCode.OTHER,
+        )
+
+        self.assertFalse(auction.allow_appeal)
 
     @staticmethod
     def _auction(verification_status: VerificationStatus) -> Auction:

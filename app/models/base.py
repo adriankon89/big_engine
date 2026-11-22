@@ -1,7 +1,9 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+UTC = timezone.utc
 
 
 class Base(DeclarativeBase):

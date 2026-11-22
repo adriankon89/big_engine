@@ -8,8 +8,8 @@ from app.enums import Role
 from app.infrastructure.rate_limiter import limiter
 from app.models.user import User
 from app.schemas.auction import (
-    AuctionRead,
     MyAuctionFilterParams,
+    MyAuctionRead,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
@@ -29,14 +29,14 @@ router = APIRouter(prefix="/users")
 
 @router.get(
     "/me/auctions",
-    response_model=PaginatedResponse[AuctionRead],
+    response_model=PaginatedResponse[MyAuctionRead],
     status_code=status.HTTP_200_OK,
 )
 def get_my_auctions(
     current_user: Annotated[User, Depends(get_current_user)],
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     params: MyAuctionFilterParams,
-) -> PaginatedResponse[AuctionRead]:
+) -> PaginatedResponse[MyAuctionRead]:
     return auction_service.list_auctions_by_seller(params, current_user.id)
 
 

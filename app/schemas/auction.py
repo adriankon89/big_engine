@@ -1,4 +1,5 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -11,6 +12,8 @@ from app.enums import (
     VerificationStatus,
 )
 from app.schemas.pagination import PaginationParams
+
+UTC = timezone.utc
 
 
 class MyAuctionFilterParams(PaginationParams):
@@ -113,3 +116,7 @@ class AuctionsForManualReviewResponse(AuctionReviewRead):
 
 class AuctionApproveRequest(AuctionRejectRequest):
     pass
+
+
+class MyAuctionRead(AuctionRead):
+    allow_appeal: bool

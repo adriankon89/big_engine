@@ -1,11 +1,12 @@
-from datetime import UTC, datetime
-from typing import Optional
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.enums import Role, UserStatus
 from app.models.base import Base
+
+UTC = timezone.utc
 
 
 class User(Base):

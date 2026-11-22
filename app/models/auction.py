@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -16,8 +16,9 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.enums import AuctionStatus, RejectionSource, VerificationStatus
-from app.models.auction_appeal import AuctionAppeal
 from app.models.base import Base
+
+UTC = timezone.utc
 
 
 class Auction(Base):
@@ -87,6 +88,19 @@ class Auction(Base):
     @property
     def verification_status(self) -> VerificationStatus:
         return self._verification_status
+
+    @property
+    def allow_appeal(self) -> bool:
+        if self.appeal is not None:
+            return False
+
+        created_at = self.created_at
+        if created_at is None:
+            return False
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=UTC)
+
+        return datetime.now(UTC) - created_at < timedelta(days=30)
 
     def reject(
         self,

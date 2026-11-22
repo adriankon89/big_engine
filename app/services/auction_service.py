@@ -4,7 +4,7 @@ from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import asc, desc, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.dto import UploadedFileDTO
 from app.enums import AuctionSortBy, RejectionSource, SortOrder, VerificationStatus
@@ -13,9 +13,9 @@ from app.models.auction_image import AuctionImage
 from app.schemas.auction import (
     AuctionCreate,
     AuctionImageCreate,
-    AuctionRead,
     AuctionsForManualReviewResponse,
     MyAuctionFilterParams,
+    MyAuctionRead,
 )
 from app.schemas.moderation import ModeratorAuctionFilterParams
 from app.schemas.pagination import PaginatedResponse
@@ -42,8 +42,12 @@ class AuctionService:
 
     def list_auctions_by_seller(
         self, params: MyAuctionFilterParams, seller_id: int
-    ) -> PaginatedResponse[AuctionRead]:
-        stmt = select(Auction).where(Auction.seller_id == seller_id)
+    ) -> PaginatedResponse[MyAuctionRead]:
+        stmt = (
+            select(Auction)
+            .options(selectinload(Auction.appeal))
+            .where(Auction.seller_id == seller_id)
+        )
 
         if params.status is not None:
             stmt = stmt.where(Auction._status == params.status)
@@ -68,11 +72,11 @@ class AuctionService:
         stmt = stmt.offset(params.offset).limit(params.page_size)
 
         auctions: list[Auction] = list(self.db.scalars(stmt).all())
-        auction_reads: builtins.list[AuctionRead] = [
-            AuctionRead.model_validate(auction) for auction in auctions
+        auction_reads: builtins.list[MyAuctionRead] = [
+            MyAuctionRead.model_validate(auction) for auction in auctions
         ]
 
-        return PaginatedResponse[AuctionRead].create(
+        return PaginatedResponse[MyAuctionRead].create(
             items=auction_reads, total=total, params=params
         )
 

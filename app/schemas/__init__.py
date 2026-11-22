@@ -5,6 +5,7 @@ from app.schemas.auction import (
     AuctionRead,
     AuctionRejectRequest,
     AuctionReviewRead,
+    MyAuctionRead,
 )
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.bid import BidCreate, BidRead
@@ -34,6 +35,7 @@ __all__ = [
     "ChangePasswordRequest",
     "LoginRequest",
     "ModeratorFilterParams",
+    "MyAuctionRead",
     "PaginatedResponse",
     "PaginationParams",
     "TokenResponse",
