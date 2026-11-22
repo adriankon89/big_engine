@@ -1,4 +1,6 @@
 import unittest
+from datetime import datetime
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 from sqlalchemy.dialects import sqlite
@@ -27,8 +29,22 @@ class AuctionServiceTests(unittest.TestCase):
             sort_by=AuctionSortBy.START_TIME,
             order=SortOrder.DESC,
         )
-        auctions = [MagicMock(spec=Auction)]
+        auctions = [
+            Auction(
+                id=1,
+                title="Vintage camera",
+                description="A well-kept camera for collectors.",
+                starting_price=Decimal("10.00"),
+                minimum_price=Decimal("10.00"),
+                current_price=Decimal("10.00"),
+                bid_increment=Decimal("1.00"),
+                _status=AuctionStatus.CLOSED,
+                starts_at=datetime(2026, 1, 1),
+                ends_at=datetime(2026, 1, 2),
+            )
+        ]
         db = MagicMock()
+        db.scalar.return_value = 15
         db.scalars.return_value.all.return_value = auctions
         service = AuctionService(
             db=db, storage=MagicMock(), moderator_assignment=MagicMock()
@@ -36,7 +52,12 @@ class AuctionServiceTests(unittest.TestCase):
 
         result = service.list_auctions_by_seller(params, seller_id)
 
-        self.assertEqual(result, auctions)
+        self.assertEqual(len(result.items), 1)
+        self.assertEqual(result.items[0].id, 1)
+        self.assertEqual(result.total, 15)
+        self.assertEqual(result.page, 2)
+        self.assertEqual(result.page_size, 10)
+        self.assertEqual(result.total_pages, 2)
         statement = db.scalars.call_args.args[0]
         compiled = statement.compile(dialect=sqlite.dialect())
         sql = str(compiled)
@@ -53,12 +74,16 @@ class AuctionServiceTests(unittest.TestCase):
     def test_list_for_seller_defaults_to_open_status(self) -> None:
         params = MyAuctionFilterParams()
         db = MagicMock()
+        db.scalar.return_value = 0
         db.scalars.return_value.all.return_value = []
         service = AuctionService(
             db=db, storage=MagicMock(), moderator_assignment=MagicMock()
         )
 
-        service.list_auctions_by_seller(params, seller_id=7)
+        result = service.list_auctions_by_seller(params, seller_id=7)
+
+        self.assertEqual(result.items, [])
+        self.assertEqual(result.total, 0)
 
         statement = db.scalars.call_args.args[0]
         compiled = statement.compile(dialect=sqlite.dialect())

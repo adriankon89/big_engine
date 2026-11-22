@@ -29,7 +29,7 @@ router = APIRouter()
 
 @router.get(
     "/my/auctions",
-    response_model=list[AuctionRead],
+    response_model=PaginatedResponse[AuctionRead],
     status_code=status.HTTP_200_OK,
 )
 def get_my_auctions(
