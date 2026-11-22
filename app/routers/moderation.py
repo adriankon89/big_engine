@@ -102,3 +102,8 @@ def reject_auction_manual_review(
             status_code=status.HTTP_404_NOT_FOUND, detail="Auction not found"
         )
     return AuctionReviewRead.model_validate(auction)
+
+
+@router.get(
+    "auctions/appeals"
+)

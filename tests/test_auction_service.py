@@ -6,14 +6,16 @@ from unittest.mock import MagicMock
 from sqlalchemy.dialects import sqlite
 
 from app.enums import (
+    AppealReasonCode,
     AuctionSortBy,
     AuctionStatus,
     RejectionSource,
+    Role,
     SortOrder,
     VerificationStatus,
 )
 from app.models.auction import Auction
-from app.schemas.auction import MyAuctionFilterParams
+from app.schemas.auction import CreateAuctionAppealRequest, MyAuctionFilterParams
 from app.schemas.moderation import ModeratorAuctionFilterParams
 from app.services.auction_service import AuctionService
 
@@ -160,6 +162,59 @@ class AuctionServiceTests(unittest.TestCase):
                 statement = db.scalars.call_args.args[0]
                 sql = str(statement.compile(dialect=sqlite.dialect()))
                 self.assertIn(f"ORDER BY auctions.{column} ASC", sql)
+
+    def test_appeal_requires_owner_for_regular_user(self) -> None:
+        auction = Auction(
+            id=1,
+            seller_id=7,
+            title="Test",
+            description="Test",
+            starting_price=Decimal("1.00"),
+            minimum_price=Decimal("1.00"),
+            starts_at=datetime.now(),
+            ends_at=datetime.now(),
+        )
+        auction.created_at = datetime.now()
+        db = MagicMock()
+        db.get.return_value = auction
+        service = AuctionService(db, MagicMock(), MagicMock())
+        payload = CreateAuctionAppealRequest(
+            auction_id=1,
+            reason_code=AppealReasonCode.OTHER,
+            reason="Incorrect rejection",
+        )
+
+        with self.assertRaisesRegex(ValueError, "not the seller"):
+            service.create_auction_appeal(payload, actor_id=99, actor_role=Role.USER)
+
+    def test_moderator_can_appeal_any_eligible_auction(self) -> None:
+        auction = Auction(
+            id=1,
+            seller_id=7,
+            title="Test",
+            description="Test",
+            starting_price=Decimal("1.00"),
+            minimum_price=Decimal("1.00"),
+            starts_at=datetime.now(),
+            ends_at=datetime.now(),
+        )
+        auction.created_at = datetime.now()
+        db = MagicMock()
+        db.get.return_value = auction
+        service = AuctionService(db, MagicMock(), MagicMock())
+        payload = CreateAuctionAppealRequest(
+            auction_id=1,
+            reason_code=AppealReasonCode.OTHER,
+            reason="Incorrect rejection",
+        )
+
+        appeal = service.create_auction_appeal(
+            payload, actor_id=99, actor_role=Role.MODERATOR
+        )
+
+        self.assertEqual(appeal.auction_id, 1)
+        db.add.assert_called_once_with(appeal)
+        db.commit.assert_called_once()
 
 
 if __name__ == "__main__":

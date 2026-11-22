@@ -42,7 +42,7 @@ def get_my_auctions(
 
 
 @router.post(
-    "me/auctions/appeal",
+    "/me/auctions/appeal",
     status_code=status.HTTP_200_OK,
 )
 def create_auction_appeal(
@@ -50,7 +50,7 @@ def create_auction_appeal(
     auction_service: Annotated[AuctionService, Depends(get_auction_service)],
     payload: CreateAuctionAppealRequest,
 ) -> None:
-    auction_service.create_auction_appeal(payload, current_user.id)
+    auction_service.create_auction_appeal(payload, current_user.id, current_user.role)
 
 
 @router.get(
