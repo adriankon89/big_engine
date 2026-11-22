@@ -145,7 +145,15 @@ def update_auction_appeal_review(
     ],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> AuctionAppealRead:
-    appeal = appeal_service.save_moderator_action(appeal_id, current_user.id, payload)
+    try:
+        appeal = appeal_service.save_moderator_action(
+            appeal_id, current_user.id, payload
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+
     if appeal is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Appeal not found"

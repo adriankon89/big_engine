@@ -46,3 +46,11 @@ class AuctionAppeal(BaseWithTimestamps):
     )
 
     auction: Mapped["Auction"] = relationship(back_populates="appeal")
+
+    @property
+    def is_resolved(self) -> bool:
+        return self.status in (
+            AppealStatus.APPROVED,
+            AppealStatus.REJECTED,
+            AppealStatus.CANCELLED,
+        )

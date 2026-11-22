@@ -1,12 +1,17 @@
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from app.enums import AppealReasonCode, AuctionStatus, VerificationStatus
+from app.enums import (
+    AppealReasonCode,
+    AppealStatus,
+    AuctionStatus,
+    VerificationStatus,
+)
 from app.models.auction import Auction
 from app.models.auction_appeal import AuctionAppeal
 
-UTC = timezone.utc
+UTC = UTC
 
 
 class AuctionApprovalTests(unittest.TestCase):
@@ -93,6 +98,20 @@ class AuctionAppealTests(unittest.TestCase):
         )
 
         self.assertFalse(auction.allow_appeal)
+
+    def test_appeal_resolved_property(self) -> None:
+        appeal = AuctionAppeal(auction_id=1, reason_code=AppealReasonCode.OTHER)
+
+        self.assertFalse(appeal.is_resolved)
+
+        for status in (
+            AppealStatus.APPROVED,
+            AppealStatus.REJECTED,
+            AppealStatus.CANCELLED,
+        ):
+            with self.subTest(status=status):
+                appeal.status = status
+                self.assertTrue(appeal.is_resolved)
 
     @staticmethod
     def _auction(verification_status: VerificationStatus) -> Auction:

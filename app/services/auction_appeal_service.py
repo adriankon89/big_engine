@@ -78,6 +78,9 @@ class AuctionAppealService:
         if appeal is None:
             return None
 
+        if appeal.is_resolved:
+            raise ValueError("Appeal is already closed")
+
         appeal.status = payload.status
         appeal.reviewer_id = reviewer_id
         appeal.resolution_note = payload.resolution_note
