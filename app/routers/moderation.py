@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.auth.dependencies import get_current_user, require_role, require_roles
-from app.core.exceptions import AppealAlreadyClosedError
+from app.core.exceptions import AppealAlreadyClosedError, AuctionAppealNotFoundError
 from app.dependencies import (
     get_auction_appeal_service,
     get_auction_service,
@@ -147,16 +147,13 @@ def update_auction_appeal_review(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> AuctionAppealRead:
     try:
-        appeal = appeal_service.save_moderator_action(
-            appeal_id, current_user.id, payload
-        )
+        appeal = appeal_service.review_appeal(appeal_id, current_user.id, payload)
     except AppealAlreadyClosedError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc
-
-    if appeal is None:
+    except AuctionAppealNotFoundError as exc:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Appeal not found"
-        )
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
     return AuctionAppealRead.model_validate(appeal)

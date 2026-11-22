@@ -32,6 +32,11 @@ class AppealAlreadyClosedError(Exception):
     pass
 
 
+class AuctionAppealNotFoundError(Exception):
+    def __init__(self, appeal_id: int) -> None:
+        super().__init__(f"Appeal {appeal_id} not found")
+
+
 class UploadValidationError(BadRequestException):
     pass
 

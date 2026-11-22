@@ -32,6 +32,6 @@ class AuctionAppealRequest(PaginationParams):
 
 
 class AuctionAppealReviewRequest(BaseModel):
-    status: AppealStatus = Field(default=AppealStatus.OPEN, description="Appeal status")
+    status: AppealStatus | None = None
     resolution_note: str | None = Field(default=None, max_length=2000)
     internal_notes: str | None = Field(default=None, max_length=2000)

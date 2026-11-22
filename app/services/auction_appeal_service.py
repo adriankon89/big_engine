@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import AppealAlreadyClosedError
-from app.enums import AppealStatus, Role
+from app.core.exceptions import AppealAlreadyClosedError, AuctionAppealNotFoundError
+from app.enums import Role
 from app.models.auction import Auction
 from app.models.auction_appeal import AuctionAppeal
 from app.schemas.auction import CreateAuctionAppealRequest
@@ -69,27 +69,28 @@ class AuctionAppealService:
 
         return appeal
 
-    def save_moderator_action(
+    def review_appeal(
         self,
         appeal_id: int,
         reviewer_id: int,
         payload: AuctionAppealReviewRequest,
-    ) -> AuctionAppeal | None:
+    ) -> AuctionAppeal:
         appeal = self.db.get(AuctionAppeal, appeal_id)
         if appeal is None:
-            return None
+            raise AuctionAppealNotFoundError(appeal_id)
 
         if appeal.is_resolved:
             raise AppealAlreadyClosedError("Appeal is already closed")
 
-        appeal.status = payload.status
+        if payload.status is not None:
+            appeal.status = payload.status
         appeal.reviewer_id = reviewer_id
-        appeal.resolution_note = payload.resolution_note
-        appeal.internal_notes = payload.internal_notes
+        if "resolution_note" in payload.model_fields_set:
+            appeal.resolution_note = payload.resolution_note
+        if "internal_notes" in payload.model_fields_set:
+            appeal.internal_notes = payload.internal_notes
         appeal.resolved_at = (
-            datetime.now(timezone(timedelta(0)))
-            if payload.status in (AppealStatus.APPROVED, AppealStatus.REJECTED)
-            else None
+            datetime.now(timezone(timedelta(0))) if appeal.is_resolved else None
         )
         self.db.commit()
         self.db.refresh(appeal)
