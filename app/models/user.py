@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.enums import Role, UserStatus
 from app.models.base import Base
 
-UTC = timezone.utc
+UTC = UTC
 
 
 class User(Base):
@@ -33,6 +33,6 @@ class User(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
-    wallet: Mapped[Optional["Wallet"]] = relationship(
+    wallet: Mapped["Wallet | None"] = relationship(
         "Wallet", back_populates="user", uselist=False
     )
