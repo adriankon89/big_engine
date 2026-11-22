@@ -48,12 +48,9 @@ class AuctionAppealService:
         if auction is None:
             raise ValueError("Auction not found")
 
-        privileged_roles = (Role.ADMIN, Role.MODERATOR)
-        is_privileged = actor_role in privileged_roles or actor_role in (
-            Role.ADMIN.value,
-            Role.MODERATOR.value,
-        )
-        if auction.seller_id != actor_id and not is_privileged:
+        is_seller = auction.seller_id == actor_id
+        is_privileged = actor_role in (Role.ADMIN, Role.MODERATOR)
+        if not (is_seller or is_privileged):
             raise ValueError("You are not the seller of this auction")
         if not auction.allow_appeal:
             raise ValueError("This auction is not eligible for appeal")

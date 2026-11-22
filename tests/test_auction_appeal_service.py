@@ -2,13 +2,54 @@ import unittest
 from unittest.mock import MagicMock
 
 from app.core.exceptions import AppealAlreadyClosedError, AuctionAppealNotFoundError
-from app.enums import AppealReasonCode, AppealStatus
+from app.enums import AppealReasonCode, AppealStatus, Role
 from app.models.auction_appeal import AuctionAppeal
+from app.schemas.auction import CreateAuctionAppealRequest
 from app.schemas.auction_appeal import AuctionAppealReviewRequest
 from app.services.auction_appeal_service import AuctionAppealService
 
 
 class AuctionAppealServiceTests(unittest.TestCase):
+    def test_create_allows_moderator_string_role(self) -> None:
+        auction = MagicMock()
+        auction.id = 4
+        auction.seller_id = 7
+        auction.allow_appeal = True
+        db = MagicMock()
+        db.get.return_value = auction
+        service = AuctionAppealService(db)
+        payload = CreateAuctionAppealRequest(
+            auction_id=4,
+            reason_code=AppealReasonCode.OTHER,
+            reason="Incorrect decision",
+        )
+
+        appeal = service.create(payload, actor_id=12, actor_role="moderator")
+
+        self.assertEqual(appeal.auction_id, 4)
+        db.add.assert_called_once_with(appeal)
+        db.commit.assert_called_once()
+        db.refresh.assert_called_once_with(appeal)
+
+    def test_create_rejects_non_seller_regular_user(self) -> None:
+        auction = MagicMock()
+        auction.seller_id = 7
+        auction.allow_appeal = True
+        db = MagicMock()
+        db.get.return_value = auction
+        service = AuctionAppealService(db)
+        payload = CreateAuctionAppealRequest(
+            auction_id=4,
+            reason_code=AppealReasonCode.OTHER,
+            reason="Incorrect decision",
+        )
+
+        with self.assertRaisesRegex(ValueError, "not the seller"):
+            service.create(payload, actor_id=12, actor_role=Role.USER)
+
+        db.add.assert_not_called()
+        db.commit.assert_not_called()
+
     def test_review_preserves_omitted_fields_and_clears_explicit_null(self) -> None:
         appeal = MagicMock()
         appeal.is_resolved = False
