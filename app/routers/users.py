@@ -48,7 +48,7 @@ def get_my_auctions(
 
 @router.post(
     "/me/auctions/appeal",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_auction_appeal(
     current_user: Annotated[User, Depends(get_current_user)],
