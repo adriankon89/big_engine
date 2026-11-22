@@ -8,6 +8,7 @@ from app.enums import Role
 from app.infrastructure.rate_limiter import limiter
 from app.models.user import User
 from app.schemas.auction import (
+    CreateAuctionAppealRequest,
     MyAuctionFilterParams,
     MyAuctionRead,
 )
@@ -38,6 +39,18 @@ def get_my_auctions(
     params: MyAuctionFilterParams,
 ) -> PaginatedResponse[MyAuctionRead]:
     return auction_service.list_auctions_by_seller(params, current_user.id)
+
+
+@router.post(
+    "me/auctions/appeal",
+    status_code=status.HTTP_200_OK,
+)
+def create_auction_appeal(
+    current_user: Annotated[User, Depends(get_current_user)],
+    auction_service: Annotated[AuctionService, Depends(get_auction_service)],
+    payload: CreateAuctionAppealRequest,
+) -> None:
+    auction_service.create_auction_appeal(payload, current_user.id)
 
 
 @router.get(

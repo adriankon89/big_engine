@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.enums import (
+    AppealReasonCode,
     AuctionSortBy,
     AuctionStatus,
     RejectionSource,
@@ -13,7 +13,7 @@ from app.enums import (
 )
 from app.schemas.pagination import PaginationParams
 
-UTC = timezone.utc
+UTC = UTC
 
 
 class MyAuctionFilterParams(PaginationParams):
@@ -120,3 +120,9 @@ class AuctionApproveRequest(AuctionRejectRequest):
 
 class MyAuctionRead(AuctionRead):
     allow_appeal: bool
+
+
+class CreateAuctionAppealRequest(BaseModel):
+    auction_id: int
+    reason_code: AppealReasonCode
+    reason: str = Field(min_length=1, max_length=2000)
